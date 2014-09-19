@@ -1,14 +1,9 @@
+from music21 import corpus
+from music21 import stream
+from music21 import note
+from music21 import chord
+from pprint import pprint
 import argparse
-
-# The smallest duration covered. Expressed as a percentage of a quarter note.
-smallest_note = 1.0 / 2.0
-
-reference_note = None
-reference_octave = None
-
-tie_active = False
-
-pitches = []
 
 def convert_nmf_to_midi():
     '''Converts an NMF file to a MIDI file.'''
@@ -18,48 +13,69 @@ def convert_nmf_to_midi():
 def convert_midi_to_nmf():
     '''Converts a MIDI file to an NMF file.'''
 
+    # The smallest duration covered. Expressed as a percentage of a quarter note.
+    smallest_note = 1.0 / 2.0
+
+    reference_note = None
+    reference_octave = None
+
+    tie_active = False
+
+    parts = []
+
     sBach = corpus.parse('bach/bwv7.7')
 
-    part = sBach.parts[0].measures(0, 3)
+    # Find the lowest note in the first measure.
+    # This is the reference
+    chordStream = sBach.measures(0, 0, ignoreNumbers=True).chordify()
 
-    for element in part:
-        if type(element) is stream.Measure:
-            for el in element:
-                if type(el) is note.Note:
-                    # Mark the reference note.
-                    # This is the lowest pitch at the beginning of the piece.
-                    if reference_note is None:
-                        reference_note = el.pitch.pitchClass
-                        reference_octave = el.pitch.octave
+    for measure in chordStream:
+        for element in measure:
+            if type(element) is chord.Chord:
+                reference_note = element.bass().pitchClass
+                reference_octave = element.bass().octave
 
-                    # Calculate the octave displacement.
-                    octave_displacement = el.pitch.octave - reference_octave
+    # IgnoreNumbers means to start from 0 always.
+    # part = sBach.parts[0].measures(0, 3,  ignoreNumbers=True)
 
-                    # Store the distance from the reference.
-                    pitch = (el.pitch.pitchClass - reference_note) + octave_displacement * 12
+    for part in sBach.parts:
+        pitches = []
+        for element in part:
+            if type(element) is stream.Measure:
+                for el in element:
+                    if type(el) is note.Note:
 
-                    n_frames = el.duration.quarterLength / smallest_note
+                        # Calculate the octave displacement.
+                        octave_displacement = el.pitch.octave - reference_octave
 
-                    for i in range(int(n_frames)):
-                        if i == 0:
-                            if not tie_active:
-                                pitches.append([1, pitch])
+                        # Store the distance from the reference.
+                        pitch = (el.pitch.pitchClass - reference_note) + octave_displacement * 12
+
+                        n_frames = el.duration.quarterLength / smallest_note
+
+                        for i in range(int(n_frames)):
+                            if i == 0:
+                                if not tie_active:
+                                    pitches.append([1, pitch])
+                                else:
+                                    pitches.append([2, pitch])
+
+                                # a tie can only begin or end at a new note.
+                                if el.tie is not None and el.tie.type == 'start':
+                                    tie_active = True
+                                else:
+                                    tie_active = False
                             else:
                                 pitches.append([2, pitch])
 
-                            # a tie can only begin or end at a new note.
-                            if el.tie is not None and el.tie.type == 'start':
-                                tie_active = True
-                            else:
-                                tie_active = False
-                        else:
-                            pitches.append([2, pitch])
+                    elif type(el) is note.Rest:
+                        n_frames = el.duration.quarterLength / smallest_note
 
-                elif type(el) is note.Rest:
-                    n_frames = el.duration.quarterLength / smallest_note
+                        for i in range(int(n_frames)):
+                            pitches.append([0, 0])
+        parts.append(pitches)
 
-                    for i in range(int(n_frames)):
-                        pitches.append([0, 0])
+    pprint(zip(*parts))
 
 def determine_source_format(input_file_path):
     '''Determines the format of the input file based on its extension.'''
@@ -89,4 +105,5 @@ def run():
         print('Please provide either an nmf or midi file as your input.')
 
 if __name__ == '__main__':
-    run()
+    convert_midi_to_nmf()
+    # run()
