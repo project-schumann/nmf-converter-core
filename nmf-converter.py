@@ -1,5 +1,8 @@
 import argparse
 
+# The smallest duration covered. Expressed as a percentage of a quarter note.
+smallest_note = 1.0 / 2.0
+
 reference_note = None
 reference_octave = None
 
@@ -21,18 +24,31 @@ def convert_midi_to_nmf():
         if type(element) is stream.Measure:
             for el in element:
                 if type(el) is note.Note:
+                    # Mark the reference note.
+                    # This is the lowest pitch at the beginning of the piece.
+                    if reference_note is None:
+                        reference_note = el.pitch.pitchClass
+                        reference_octave = el.pitch.octave
 
-    # Mark the reference note.
-    # This is the lowest pitch at the beginning of the piece.
-    if reference_note is None:
-        reference_note = el.pitch.pitchClass
-        reference_octave = el.pitch.octave
+                    # Calculate the octave displacement.
+                    octave_displacement = el.pitch.octave - reference_octave
 
-    # Calculate the octave displacement.
-    octave_displacement = el.pitch.octave - reference_octave
+                    # Store the distance from the reference.
+                    pitch = (el.pitch.pitchClass - reference_note) + octave_displacement * 12
 
-    # Store the distance from the reference.
-    pitches.append((el.pitch.pitchClass - reference_note) + octave_displacement * 12)
+                    n_frames = el.duration.quarterLength / smallest_note
+
+                    for i in range(n_frames):
+                        if i == 0:
+                            pitches.append([1, pitch])
+                        else:
+                            pitches.append([2, pitch])
+
+                elif type(el) is note.Rest:
+                    n_frames = el.duration.quarterLength / smallest_note
+
+                    for i in range(n_frames):
+                        pitches.append([0, 0])
 
 def determine_source_format(input_file_path):
     '''Determines the format of the input file based on its extension.'''
