@@ -6,6 +6,8 @@ smallest_note = 1.0 / 2.0
 reference_note = None
 reference_octave = None
 
+tie_active = False
+
 pitches = []
 
 def convert_nmf_to_midi():
@@ -38,16 +40,25 @@ def convert_midi_to_nmf():
 
                     n_frames = el.duration.quarterLength / smallest_note
 
-                    for i in range(n_frames):
+                    for i in range(int(n_frames)):
                         if i == 0:
-                            pitches.append([1, pitch])
+                            if not tie_active:
+                                pitches.append([1, pitch])
+                            else:
+                                pitches.append([2, pitch])
+
+                            # a tie can only begin or end at a new note.
+                            if el.tie is not None and el.tie.type == 'start':
+                                tie_active = True
+                            else:
+                                tie_active = False
                         else:
                             pitches.append([2, pitch])
 
                 elif type(el) is note.Rest:
                     n_frames = el.duration.quarterLength / smallest_note
 
-                    for i in range(n_frames):
+                    for i in range(int(n_frames)):
                         pitches.append([0, 0])
 
 def determine_source_format(input_file_path):
