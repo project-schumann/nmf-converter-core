@@ -1,11 +1,6 @@
 nmf-converter-core
 ==================
 
-|TravisCI Status|
-|Coveralls Status|
-|Documentation Status|
-|PyPi Package Status|
-
 Core NMF converter logic
 
 Setting Up the Development Environment
