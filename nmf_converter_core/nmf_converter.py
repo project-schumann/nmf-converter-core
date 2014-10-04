@@ -2,7 +2,6 @@ from music21 import corpus
 from music21 import stream
 from music21 import note
 from music21 import chord
-from pprint import pprint
 
 import argparse
 import sys
@@ -15,11 +14,11 @@ def convert_nmf_to_midi():
     # TODO: Implement me.
     pass
 
-def convert_midi_to_nmf(input_file):
+def convert_score_to_nmf(score):
     """
     Converts a MIDI file to an NMF file.
-    :type input_file: str
-    :param input_file: The input midi file to convert.
+    :type score: Score
+    :param score: The input score stream to convert.
     :rtype: list
     :return: A list of tuples representing the music contained in the MIDI file.
     """
@@ -34,8 +33,7 @@ def convert_midi_to_nmf(input_file):
 
     parts = []
 
-    score = corpus.parse('bach/bwv7.7')
-
+    # TODO: Convert to an absolute system.
     # Find the lowest note in the first measure.
     # This is the reference
     chord_stream = score.measures(0, 0, ignoreNumbers=True).chordify()
@@ -120,7 +118,8 @@ def run():
     if source_format is '.nmf':
         convert_nmf_to_midi(args.input_file)
     elif source_format is '.midi':
-        convert_midi_to_nmf()
+        #TODO: Import MIDI File
+        convert_score_to_nmf()
     else:
         print('Please provide either an nmf or midi file as your input.')
 

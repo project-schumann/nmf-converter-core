@@ -1,5 +1,6 @@
 import unittest
 
+from music21 import converter
 from nmf_converter_core import nmf_converter
 
 class NMFConverterTest(unittest.TestCase):
@@ -32,3 +33,14 @@ class NMFConverterTest(unittest.TestCase):
       file_extension = nmf_converter.determine_source_format('/foo/bar/myFile.nmf')
 
       assert file_extension == '.nmf'
+
+  def test_convert_score_to_nmf(self):
+      """
+      Tests the conversion of a score stream to an nmf data structure.
+      """
+      score = converter.parse('./fixtures/bwv7.7.mid')
+      nmf_ds = nmf_converter.convert_score_to_nmf(score)
+
+      # TODO: Find appropriate segment and write solution.
+      assert True
+
