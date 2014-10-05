@@ -1,5 +1,5 @@
 from music21 import note
-from music21 import chord
+from music21 import converter
 
 import argparse
 import sys
@@ -94,8 +94,7 @@ def run():
     if source_format is '.nmf':
         convert_nmf_to_midi(args.input_file)
     elif source_format is '.midi':
-        #TODO: Import MIDI File
-        convert_score_to_nmf()
+        convert_score_to_nmf(converter.parse(args.input_file))
     else:
         print('Please provide either an nmf or midi file as your input.')
 
