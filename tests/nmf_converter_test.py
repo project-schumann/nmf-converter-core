@@ -38,9 +38,10 @@ class NMFConverterTest(unittest.TestCase):
       """
       Tests the conversion of a score stream to an nmf data structure.
       """
-      score = converter.parse('./fixtures/bwv7.7.mid')
-      nmf_ds = nmf_converter.convert_score_to_nmf(score)
+      score = converter.parse('./fixtures/bwv33.mid')
+      nmf = str(nmf_converter.convert_score_to_nmf(score))
 
-      # TODO: Find appropriate segment and write solution.
-      assert True
+      with open('./expected/bwv33.nmf', 'r') as expected_file:
+          expected = expected_file.read()
 
+          assert expected == nmf

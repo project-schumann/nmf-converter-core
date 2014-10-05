@@ -1,5 +1,3 @@
-from music21 import corpus
-from music21 import stream
 from music21 import note
 from music21 import chord
 
@@ -26,59 +24,37 @@ def convert_score_to_nmf(score):
     # The smallest duration covered. Expressed as a percentage of a quarter note.
     smallest_note = 1.0 / 2.0
 
-    reference_note = None
-    reference_octave = None
-
     tie_active = False
 
     parts = []
 
-    # TODO: Convert to an absolute system.
-    # Find the lowest note in the first measure.
-    # This is the reference
-    chord_stream = score.measures(0, 0, ignoreNumbers=True).chordify()
-
-    for measure in chord_stream:
-        for element in measure:
-            if type(element) is chord.Chord:
-                reference_note = element.bass().pitchClass
-                reference_octave = element.bass().octave
-
     for part in score.parts:
         pitches = []
         for element in part:
-            if type(element) is stream.Measure:
-                for el in element:
-                    if type(el) is note.Note:
+            if type(element) is note.Note:
 
-                        # Calculate the octave displacement.
-                        octave_displacement = el.pitch.octave - reference_octave
+                n_frames = element.duration.quarterLength / smallest_note
 
-                        # Store the distance from the reference.
-                        pitch = (el.pitch.pitchClass - reference_note) + octave_displacement * 12
+                for i in range(int(n_frames)):
+                    if i == 0:
+                        if not tie_active:
+                            pitches.append([1, element.pitchClass, element.octave])
+                        else:
+                            pitches.append([2, element.pitchClass, element.octave])
 
-                        n_frames = el.duration.quarterLength / smallest_note
+                        # a tie can only begin or end at a new note.
+                        if element.tie is not None and element.tie.type == 'start':
+                            tie_active = True
+                        else:
+                            tie_active = False
+                    else:
+                        pitches.append([2, element.pitchClass, element.octave])
 
-                        for i in range(int(n_frames)):
-                            if i == 0:
-                                if not tie_active:
-                                    pitches.append([1, pitch])
-                                else:
-                                    pitches.append([2, pitch])
+            elif type(element) is note.Rest:
+                n_frames = element.duration.quarterLength / smallest_note
 
-                                # a tie can only begin or end at a new note.
-                                if el.tie is not None and el.tie.type == 'start':
-                                    tie_active = True
-                                else:
-                                    tie_active = False
-                            else:
-                                pitches.append([2, pitch])
-
-                    elif type(el) is note.Rest:
-                        n_frames = el.duration.quarterLength / smallest_note
-
-                        for i in range(int(n_frames)):
-                            pitches.append([0, 0])
+                for i in range(int(n_frames)):
+                    pitches.append([0, 0, 0])
         parts.append(pitches)
 
     return zip(*parts)
