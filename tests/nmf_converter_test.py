@@ -14,7 +14,7 @@ class NMFConverterTest(unittest.TestCase):
       args = nmf_converter.parse_cl_args(['input.midi'])
 
       assert args.input_file == 'input.midi'
-      assert args.output_file == None
+      assert args.output_file is None
 
   def test_parse_cl_args_with_output(self):
       """

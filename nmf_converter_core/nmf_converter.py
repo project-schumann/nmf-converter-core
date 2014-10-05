@@ -92,7 +92,7 @@ def run():
     source_format = determine_source_format(args.input_file)
 
     if source_format is '.nmf':
-        convert_nmf_to_midi(args.input_file)
+        convert_nmf_to_midi(converter.parse(args.input_file))
     elif source_format is '.midi':
         convert_score_to_nmf(converter.parse(args.input_file))
     else:
