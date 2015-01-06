@@ -6,6 +6,8 @@ Core NMF converter logic
 Setting Up the Development Environment
 --------------------------------------
 
+The development environment is based on Python 2.7 and virtualenv.
+
 Pre-Requisites
 ~~~~~~~~~~~~~~
 
