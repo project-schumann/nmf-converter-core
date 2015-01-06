@@ -12,6 +12,20 @@ def convert_vmf_to_midi(vmfScore):
     # TODO: Implement me.
     pass
 
+def scan_score(score):
+    """
+    Scans the entire score for rhythmic analysis.
+    This scan determines the smallest note value necessary to accurately
+    encode the score in vmf.
+    :type score: Score
+    :param score: The input score stream to analyze.
+    :rtype int
+    :return: An integer denoting the smallest fraction of a quarter note
+    necessary to accurately encode the score in vmf.
+    """
+    # TODO: Implement me.
+    pass
+
 def convert_score_to_vmf(score):
     """
     Converts a MIDI file to an vmf file.
