@@ -5,16 +5,16 @@ import argparse
 import sys
 import os
 
-def convert_nmf_to_midi():
+def convert_vmf_to_midi(vmfScore):
     """
-    Converts an NMF file to a MIDI file.
+    Converts an vmf file to a MIDI file.
     """
     # TODO: Implement me.
     pass
 
-def convert_score_to_nmf(score):
+def convert_score_to_vmf(score):
     """
-    Converts a MIDI file to an NMF file.
+    Converts a MIDI file to an vmf file.
     :type score: Score
     :param score: The input score stream to convert.
     :rtype: list
@@ -78,7 +78,7 @@ def parse_cl_args(arg_vector):
     :rtype: object
     :return: An object with attributes referring to the arguments passed by the user.
     """
-    parser = argparse.ArgumentParser(description='Converts to and from NMF into MIDI.')
+    parser = argparse.ArgumentParser(description='Converts to and from vmf into MIDI.')
 
     parser.add_argument('input_file', metavar='input_file', help='The path of the input file to be converted.')
     parser.add_argument('output_file', metavar='output_file', help='The path of the output file.', nargs='?')
@@ -86,17 +86,17 @@ def parse_cl_args(arg_vector):
     return parser.parse_args(arg_vector)
 
 def run():
-    """Converts to and from NMF into MIDI."""
+    """Converts to and from vmf into MIDI."""
     args = parse_cl_args(sys.argv[1:])
 
     source_format = determine_source_format(args.input_file)
 
-    if source_format is '.nmf':
-        convert_nmf_to_midi(converter.parse(args.input_file))
+    if source_format is '.vmf':
+        convert_vmf_to_midi(converter.parse(args.input_file))
     elif source_format is '.midi':
-        convert_score_to_nmf(converter.parse(args.input_file))
+        convert_score_to_vmf(converter.parse(args.input_file))
     else:
-        print('Please provide either an nmf or midi file as your input.')
+        print('Please provide either an vmf or midi file as your input.')
 
 if __name__ == '__main__':
     run()
