@@ -12,7 +12,7 @@ def convert_vmf_to_midi(vmfScore):
     # TODO: Implement me.
     pass
 
-def scan_score(score):
+def scan_score_for_shortest_duration(score):
     """
     Scans the entire score for rhythmic analysis.
     This scan determines the smallest note value necessary to accurately
@@ -23,8 +23,17 @@ def scan_score(score):
     :return: An integer denoting the smallest fraction of a quarter note
     necessary to accurately encode the score in vmf.
     """
-    # TODO: Implement me.
-    pass
+    # Flatten the score into one stream and extract the notes and rests.
+    notes_and_rests = score.flat.notesAndRests
+    
+    shortest_duration = -1
+    
+    for element in notes_and_rests:
+        duration = element.duration.quarterLength
+        if duration < shortest_duration or shortest_duration is -1:
+            shortest_duration = duration
+            
+    return shortest_duration
 
 def convert_score_to_vmf(score):
     """

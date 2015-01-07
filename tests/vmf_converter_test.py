@@ -1,6 +1,7 @@
 import unittest
 
 from music21 import converter
+from music21 import duration
 from vmf_converter_core import vmf_converter
 
 class vmfConverterTest(unittest.TestCase):
@@ -46,10 +47,12 @@ class vmfConverterTest(unittest.TestCase):
 
           assert expected == vmf
           
-  def test_scan_score(self):
+  def test_scan_score_for_shortest_duration(self):
     """
     Tests the scanning function which pre-analyzes the score to determine the
     smallest necessary note value to accurately encode the score as a vmf.
     """
-    # TODO: Implement me.
-    assert True == False
+    score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
+    shortest_duration = vmf_converter.scan_score_for_shortest_duration(score)
+    
+    assert shortest_duration == duration.convertTypeToQuarterLength('eighth')

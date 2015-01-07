@@ -1,0 +1,2 @@
+workon music_memory_core
+nosetests
