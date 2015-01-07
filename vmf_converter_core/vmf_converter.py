@@ -45,7 +45,7 @@ def convert_score_to_vmf(score):
     """
 
     # The smallest duration covered. Expressed as a percentage of a quarter note.
-    smallest_note = 1.0 / 2.0
+    smallest_note = scan_score_for_shortest_duration(score)
 
     tie_active = False
 
@@ -53,7 +53,7 @@ def convert_score_to_vmf(score):
 
     for part in score.parts:
         pitches = []
-        for element in part:
+        for element in part.flat:
             if type(element) is note.Note:
 
                 n_frames = element.duration.quarterLength / smallest_note
@@ -61,9 +61,9 @@ def convert_score_to_vmf(score):
                 for i in range(int(n_frames)):
                     if i == 0:
                         if not tie_active:
-                            pitches.append([1, element.pitchClass, element.octave])
+                            pitches.append([1, 0, 0, element.pitchClass, element.octave])
                         else:
-                            pitches.append([2, element.pitchClass, element.octave])
+                            pitches.append([2, 0, 0, element.pitchClass, element.octave])
 
                         # a tie can only begin or end at a new note.
                         if element.tie is not None and element.tie.type == 'start':
@@ -71,16 +71,16 @@ def convert_score_to_vmf(score):
                         else:
                             tie_active = False
                     else:
-                        pitches.append([2, element.pitchClass, element.octave])
+                        pitches.append([2, 0, 0, element.pitchClass, element.octave])
 
             elif type(element) is note.Rest:
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range(int(n_frames)):
-                    pitches.append([0, 0, 0])
+                    pitches.append([0, 0, 0, 0, 0])
         parts.append(pitches)
 
-    return zip(*parts)
+    return [list(tick) for tick in zip(*parts)]
 
 def determine_source_format(input_file_path):
     """

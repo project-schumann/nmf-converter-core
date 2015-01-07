@@ -40,7 +40,9 @@ class vmfConverterTest(unittest.TestCase):
       Tests the conversion of a score stream to an vmf data structure.
       """
       score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
-      vmf = str(vmf_converter.convert_score_to_vmf(score))
+      first_phrase = score.measures(0, 8)
+
+      vmf = str(vmf_converter.convert_score_to_vmf(first_phrase))
 
       with open('./tests/expected/aus_meines_herz.vmf', 'r') as expected_file:
           expected = expected_file.read()
