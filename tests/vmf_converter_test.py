@@ -1,4 +1,5 @@
 import unittest
+import json
 
 from music21 import converter
 from music21 import duration
@@ -42,12 +43,13 @@ class vmfConverterTest(unittest.TestCase):
       score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
       first_phrase = score.measures(0, 8)
 
-      vmf = str(vmf_converter.convert_score_to_vmf(first_phrase))
-
+      actual = vmf_converter.convert_score_to_vmf(first_phrase)
+      
       with open('./tests/expected/aus_meines_herz.vmf', 'r') as expected_file:
-          expected = expected_file.read()
+          expected_json = expected_file.read()
+          expected = json.loads(expected_json)
 
-          assert expected == vmf
+          assert expected == actual
           
   def test_scan_score_for_shortest_duration(self):
     """

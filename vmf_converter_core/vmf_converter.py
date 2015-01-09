@@ -80,7 +80,9 @@ def convert_score_to_vmf(score):
                     pitches.append([0, 0, 0, 0, 0])
         parts.append(pitches)
 
-    return [list(tick) for tick in zip(*parts)]
+    vmf_file = {u'header': {}, u'body': [list(tick) for tick in zip(*parts)]}
+
+    return vmf_file
 
 def determine_source_format(input_file_path):
     """
@@ -109,7 +111,9 @@ def parse_cl_args(arg_vector):
     return parser.parse_args(arg_vector)
 
 def run():
-    """Converts to and from vmf into MIDI."""
+    """
+    Converts to and from vmf into MIDI.
+    """
     args = parse_cl_args(sys.argv[1:])
 
     source_format = determine_source_format(args.input_file)
