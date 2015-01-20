@@ -36,7 +36,7 @@ class vmfConverterTest(unittest.TestCase):
 
       assert file_extension == '.vmf'
 
-  def test_convert_score_to_vmf(self):
+  def test_convert_score_to_vmf_001(self):
       """
       Tests the conversion of a score stream to an vmf data structure.
       """
@@ -46,6 +46,21 @@ class vmfConverterTest(unittest.TestCase):
       actual = vmf_converter.convert_score_to_vmf(first_phrase)
       
       with open('./tests/expected/aus_meines_herz.vmf', 'r') as expected_file:
+          expected_json = expected_file.read()
+          expected = json.loads(expected_json)
+
+          assert expected == actual
+
+  def test_convert_score_to_vmf_002(self):
+      """
+      Tests the conversion of a score stream with ties to a vmf data structure.
+      """
+      score = converter.parse('./tests/fixtures/aus_meines_herz_ties.mid')
+      first_phrase = score.measures(0, 8)
+
+      actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+      with open('./tests/expected/aus_meines_herz_ties.vmf', 'r') as expected_file:
           expected_json = expected_file.read()
           expected = json.loads(expected_json)
 
