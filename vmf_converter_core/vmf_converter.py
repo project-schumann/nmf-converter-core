@@ -25,15 +25,39 @@ def scan_score_for_shortest_duration(score):
     """
     # Flatten the score into one stream and extract the notes and rests.
     notes_and_rests = score.flat.notesAndRests
-    
-    shortest_duration = -1
-    
+
+    # Keep track of the smallest duple and triple. We multiply them for the shortest duration.
+    # eg. eighth * triplet = 2 * 3 = 6 notes per beat
+    shortest_duration_duple = -1
+    shortest_duration_triple = -1
+
     for element in notes_and_rests:
         duration = element.duration.quarterLength
-        if duration < shortest_duration or shortest_duration is -1:
-            shortest_duration = duration
-            
-    return shortest_duration
+
+        # We don't care if it is larger than a quarter.
+        if duration > 1:
+            continue
+
+        duration_inv = round(1 / duration)
+
+        if duration_inv % 3 == 0:
+            # Multiple of 3.
+            if duration < shortest_duration_triple or shortest_duration_triple is -1:
+                shortest_duration_triple = duration
+        elif duration_inv % 2 == 0 or duration_inv == 1:
+            # Multiple of 2.
+            if duration < shortest_duration_duple or shortest_duration_duple is -1:
+                shortest_duration_duple = duration
+
+    # Set -1 to 1 if we never encounter a duple or triple.
+    if shortest_duration_duple < 0:
+        shortest_duration_duple *= -1
+
+    if shortest_duration_triple < 0:
+        shortest_duration_triple *= -1
+
+    # Take the product
+    return shortest_duration_duple * shortest_duration_triple
 
 def convert_score_to_vmf(score):
     """
