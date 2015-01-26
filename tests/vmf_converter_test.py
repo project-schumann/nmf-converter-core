@@ -81,6 +81,21 @@ class vmfConverterTest(unittest.TestCase):
 
         assert expected == actual
 
+  def test_convert_score_to_vmf_004(self):
+      """
+      Tests the conversion of a score stream with duplets to a vmf data structure.
+      """
+      score = converter.parse('./tests/fixtures/duplets.mid')
+      first_phrase = score.measures(0, 2)
+
+      actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+      with open('./tests/expected/duplets.vmf', 'r') as expected_file:
+        expected_json = expected_file.read()
+        expected = json.loads(expected_json)
+
+        assert expected == actual
+
   def test_scan_score_for_shortest_duration(self):
     """
     Tests the scanning function which pre-analyzes the score to determine the

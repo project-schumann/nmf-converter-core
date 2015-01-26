@@ -32,6 +32,7 @@ def scan_score_for_shortest_duration(score):
     shortest_duration_triple = -1
 
     for element in notes_and_rests:
+        # TODO: This only works in simple time. Find a solution for compound time.
         duration = element.duration.quarterLength
 
         # We don't care if it is larger than a quarter.
