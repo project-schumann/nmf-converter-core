@@ -32,8 +32,14 @@ def scan_score_for_shortest_duration(score):
     shortest_duration_triple = -1
 
     for element in notes_and_rests:
-        # TODO: This only works in simple time. Find a solution for compound time.
-        duration = element.duration.quarterLength
+        # We need to know this so we can modify the beat duration for compound times.
+        current_time_signature = element.getContextByClass('TimeSignature')
+
+        # For triplets in simple time.
+        if current_time_signature.beatDuration.quarterLength is 1:
+            duration = element.duration.quarterLength / current_time_signature.beatDuration.quarterLength
+        else:
+            duration = element.duration.quarterLength
 
         # We don't care if it is larger than a quarter.
         if duration > 1:
