@@ -40,27 +40,26 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a score stream to an vmf data structure.
         """
-        score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
-        first_phrase = score.measures(0, 8)
+        score = converter.parse('./tests/fixtures/simple.mid')
+        first_phrase = score.measures(0, 2)
 
         actual = vmf_converter.convert_score_to_vmf(first_phrase)
 
-        with open('./tests/expected/aus_meines_herz.vmf', 'r') as expected_file:
+        with open('./tests/expected/simple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-
             assert expected == actual
 
     def test_convert_score_to_vmf_002(self):
         """
         Tests the conversion of a score stream with ties to a vmf data structure.
         """
-        score = converter.parse('./tests/fixtures/aus_meines_herz_ties.mid')
-        first_phrase = score.measures(0, 8)
+        score = converter.parse('./tests/fixtures/ties.mid')
+        first_phrase = score.measures(0, 2)
 
         actual = vmf_converter.convert_score_to_vmf(first_phrase)
 
-        with open('./tests/expected/aus_meines_herz_ties.vmf', 'r') as expected_file:
+        with open('./tests/expected/ties.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
 
@@ -70,12 +69,12 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a score stream with triplets to a vmf data structure.
         """
-        score = converter.parse('./tests/fixtures/aus_meines_herz_triplets.mid')
+        score = converter.parse('./tests/fixtures/triplets.mid')
         first_phrase = score.measures(0, 2)
 
         actual = vmf_converter.convert_score_to_vmf(first_phrase)
 
-        with open('./tests/expected/aus_meines_herz_triplets.vmf', 'r') as expected_file:
+        with open('./tests/expected/triplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
 
@@ -93,14 +92,14 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/duplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-
+            print(actual)
             assert expected == actual
 
     def test_convert_score_to_vmf_005(self):
         """
         Tests the conversion of a score stream with quintuplets to a vmf data structure.
         """
-        score = converter.parse('./tests/fixtures/quintuplets.mid')
+        score = converter.parse('./tests/fixtures/quintupletest.mid')
         first_phrase = score.measures(0, 2)
 
         actual = vmf_converter.convert_score_to_vmf(first_phrase)
@@ -108,7 +107,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/quintuplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-
+            print(actual)
             assert expected == actual
 
     def test_convert_score_to_vmf_006(self):

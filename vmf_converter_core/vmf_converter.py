@@ -28,8 +28,8 @@ def scan_score_for_shortest_duration(score):
 
     # Keep track of the smallest duple and triple. We multiply them for the shortest duration.
     # eg. eighth * triplet = 2 * 3 = 6 notes per beat
-    shortest_duration_duple = -1
-    shortest_duration_triple = -1
+    shortest_duration_duple_inv = -1
+    shortest_duration_triple_inv = -1
 
     for element in notes_and_rests:
         # We need to know this so we can modify the beat duration for compound times.
@@ -45,26 +45,26 @@ def scan_score_for_shortest_duration(score):
         if duration > 1:
             continue
 
-        duration_inv = round(1 / duration)
+        duration_inv = round(current_time_signature.beatDuration.quarterLength / duration)
 
         if duration_inv % 3 == 0:
             # Multiple of 3.
-            if duration < shortest_duration_triple or shortest_duration_triple is -1:
-                shortest_duration_triple = duration
+            if duration < shortest_duration_triple_inv or shortest_duration_triple_inv is -1:
+                shortest_duration_triple_inv = duration_inv
         elif duration_inv % 2 == 0 or duration_inv == 1:
             # Multiple of 2.
-            if duration < shortest_duration_duple or shortest_duration_duple is -1:
-                shortest_duration_duple = duration
+            if duration < shortest_duration_duple_inv or shortest_duration_duple_inv is -1:
+                shortest_duration_duple_inv = duration_inv
 
     # Set -1 to 1 if we never encounter a duple or triple.
-    if shortest_duration_duple < 0:
-        shortest_duration_duple *= -1
+    if shortest_duration_duple_inv < 0:
+        shortest_duration_duple_inv *= -1
 
-    if shortest_duration_triple < 0:
-        shortest_duration_triple *= -1
+    if shortest_duration_triple_inv < 0:
+        shortest_duration_triple_inv *= -1
 
-    # Take the product
-    return shortest_duration_duple * shortest_duration_triple
+    # Take the product and return the smallest value.
+    return current_time_signature.beatDuration.quarterLength / (shortest_duration_duple_inv * shortest_duration_triple_inv)
 
 def convert_score_to_vmf(score):
     """
