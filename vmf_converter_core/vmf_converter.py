@@ -1,4 +1,5 @@
-from music21 import note
+from functools import reduce
+from music21 import note, chord
 from music21 import converter
 
 import argparse
@@ -34,6 +35,28 @@ def scan_score_for_shortest_duration(score):
     # We need a list, not a set. Convert here. The GCD is the largest common subdivision we can use.
     return approximateGCD(list(durations))
 
+def scan_score_for_largest_chord(score):
+    """
+    Scans the entire score for the largest chord.
+    This determines how many notes entries should be available in a tick.
+    :param score: Score
+    :rtype: int
+    :return: An integer denoting the size of the largest chord.
+    """
+    # Flatten the score into one stream and extract the notes.
+    notes = score.flat.notes
+
+    # Flatten the score into one stream and extract the chords.
+    chords = [element for element in score.flat.notes.elements if type(element) is chord.Chord]
+
+    largest_size = 0
+
+    # Find the largest chord size.
+    for c in chords:
+        largest_size = max(c.multisetCardinality, largest_size)
+
+    return largest_size
+
 def convert_score_to_vmf(score):
     """
     Converts a MIDI file to an vmf file.
@@ -45,6 +68,9 @@ def convert_score_to_vmf(score):
 
     # The smallest duration covered. Expressed as a percentage of a quarter note.
     smallest_note = scan_score_for_shortest_duration(score)
+
+    # The number of notes in largest chord in the file.
+    largest_chord = scan_score_for_largest_chord(score)
 
     tie_active = False
 

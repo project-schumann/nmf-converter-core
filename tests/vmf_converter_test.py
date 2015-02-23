@@ -170,7 +170,22 @@ class vmfConverterTest(unittest.TestCase):
             print(actual)
             assert expected == actual
 
-    def test_scan_score_for_shortest_duration(self):
+    def test_convert_score_to_vmf_010(self):
+        """
+        Tests the conversion of a score stream with chords to a vmf data structure.
+        """
+        score = converter.parse('./tests/fixtures/chords.mid')
+        first_phrase = score.measures(0, 2)
+
+        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+        with open('./tests/expected/chords.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+            print(actual)
+            assert expected == actual
+
+    def test_scan_score_for_shortest_duration_001(self):
         """
         Tests the scanning function which pre-analyzes the score to determine the
         smallest necessary note value to accurately encode the score as a vmf.
@@ -179,3 +194,14 @@ class vmfConverterTest(unittest.TestCase):
         shortest_duration = vmf_converter.scan_score_for_shortest_duration(score)
 
         assert shortest_duration == duration.convertTypeToQuarterLength('eighth')
+
+    def test_scan_score_for_largest_chord_001(self):
+        """
+        Tests the scanning function which pre-analyzes the score to determine the
+        largest chord size.
+        """
+
+        score = converter.parse('./tests/fixtures/chords.mid')
+        largest_chord_size = vmf_converter.scan_score_for_largest_chord(score)
+
+        assert largest_chord_size == 3
