@@ -4,6 +4,8 @@ from music21 import converter
 import argparse
 import sys
 import os
+from music21.common import approximateGCD
+
 
 def convert_vmf_to_midi(vmfScore):
     """
@@ -26,45 +28,11 @@ def scan_score_for_shortest_duration(score):
     # Flatten the score into one stream and extract the notes and rests.
     notes_and_rests = score.flat.notesAndRests
 
-    # Keep track of the smallest duple and triple. We multiply them for the shortest duration.
-    # eg. eighth * triplet = 2 * 3 = 6 notes per beat
-    shortest_duration_duple_inv = -1
-    shortest_duration_triple_inv = -1
+    # Set comprehension: Get a set of durations in the measure.
+    durations = {element.duration.quarterLength for element in notes_and_rests}
 
-    for element in notes_and_rests:
-        # We need to know this so we can modify the beat duration for compound times.
-        current_time_signature = element.getContextByClass('TimeSignature')
-
-        # For triplets in simple time.
-        if current_time_signature.beatDuration.quarterLength is 1:
-            duration = element.duration.quarterLength / current_time_signature.beatDuration.quarterLength
-        else:
-            duration = element.duration.quarterLength
-
-        # We don't care if it is larger than a quarter.
-        if duration > 1:
-            continue
-
-        duration_inv = round(current_time_signature.beatDuration.quarterLength / duration)
-
-        if duration_inv % 3 == 0:
-            # Multiple of 3.
-            if duration < shortest_duration_triple_inv or shortest_duration_triple_inv is -1:
-                shortest_duration_triple_inv = duration_inv
-        elif duration_inv % 2 == 0 or duration_inv == 1:
-            # Multiple of 2.
-            if duration < shortest_duration_duple_inv or shortest_duration_duple_inv is -1:
-                shortest_duration_duple_inv = duration_inv
-
-    # Set -1 to 1 if we never encounter a duple or triple.
-    if shortest_duration_duple_inv < 0:
-        shortest_duration_duple_inv *= -1
-
-    if shortest_duration_triple_inv < 0:
-        shortest_duration_triple_inv *= -1
-
-    # Take the product and return the smallest value.
-    return current_time_signature.beatDuration.quarterLength / (shortest_duration_duple_inv * shortest_duration_triple_inv)
+    # We need a list, not a set. Convert here. The GCD is the largest common subdivision we can use.
+    return approximateGCD(list(durations))
 
 def convert_score_to_vmf(score):
     """
