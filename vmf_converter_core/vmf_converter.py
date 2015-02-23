@@ -1,5 +1,5 @@
 from functools import reduce
-from music21 import note, chord
+from music21 import note, chord, stream
 from music21 import converter
 
 import argparse
@@ -57,6 +57,30 @@ def scan_score_for_largest_chord(score):
 
     return largest_size
 
+def scan_score_for_number_of_voices(score):
+    """
+    Scans the entire score to determine how many voices there are.
+    :param score: Score
+    :rtype: int
+    :return: A dictionary denoting the number of voices in each part.
+    """
+
+    voice_part_map = {}
+
+    for part in score.parts:
+        voices_in_part = 0
+        for m in part.getElementsByClass(stream.Measure):
+            voices_in_measure = len(m.voices)
+
+            # If there is only 1 voice, then we have 0 voice objects.
+            if voices_in_measure == 0:
+                voices_in_measure = 1
+
+            voices_in_part = max(voices_in_part, voices_in_measure)
+            voice_part_map[part.id] = voices_in_part
+
+    return voice_part_map
+
 def convert_score_to_vmf(score):
     """
     Converts a MIDI file to an vmf file.
@@ -71,6 +95,8 @@ def convert_score_to_vmf(score):
 
     # The number of notes in largest chord in the file.
     largest_chord = scan_score_for_largest_chord(score)
+
+    scan_score_for_number_of_voices(score)
 
     tie_active = False
 

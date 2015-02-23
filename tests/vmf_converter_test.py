@@ -185,6 +185,21 @@ class vmfConverterTest(unittest.TestCase):
             print(actual)
             assert expected == actual
 
+    def test_convert_score_to_vmf_011(self):
+        """
+        Tests the conversion of a score stream with multiple voices to a vmf data structure.
+        """
+        score = converter.parse('./tests/fixtures/voices.mid')
+        first_phrase = score.measures(0, 2)
+
+        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+        with open('./tests/expected/voices.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+            print(actual)
+            assert expected == actual
+
     def test_scan_score_for_shortest_duration_001(self):
         """
         Tests the scanning function which pre-analyzes the score to determine the
@@ -205,3 +220,16 @@ class vmfConverterTest(unittest.TestCase):
         largest_chord_size = vmf_converter.scan_score_for_largest_chord(score)
 
         assert largest_chord_size == 3
+
+    def test_scan_score_for_number_of_voices_001(self):
+        """
+        Tests the scanning function which pre-analyzes the score to determine the
+        number of voices in each part.
+        """
+
+        score = converter.parse('./tests/fixtures/voices.mid')
+        first_phrase = score.measures(0, 2)
+        part_voice_map = vmf_converter.scan_score_for_number_of_voices(first_phrase)
+
+        assert part_voice_map[score.parts[0].id] == 2
+        assert part_voice_map[score.parts[1].id] == 1
