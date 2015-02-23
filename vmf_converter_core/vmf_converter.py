@@ -90,6 +90,11 @@ def convert_score_to_vmf(score):
                         else:
                             pitches.append([2, 0, 0, element.pitchClass, element.octave])
 
+                        # Pad remaining note positions for chords smaller than largest.
+                        for i in range(largest_chord - 1):
+                            pitches[-1].append(-1)
+                            pitches[-1].append(-1)
+
                         # a tie can only begin or end at a new note.
                         if element.tie is not None and element.tie.type == 'start':
                             tie_active = True
@@ -97,6 +102,66 @@ def convert_score_to_vmf(score):
                             tie_active = False
                     else:
                         pitches.append([2, 0, 0, element.pitchClass, element.octave])
+
+                        # Pad remaining note positions for chords smaller than largest.
+                        for i in range(largest_chord - 1):
+                            pitches[-1].append(-1)
+                            pitches[-1].append(-1)
+
+            elif type(element) is chord.Chord:
+                n_frames = element.duration.quarterLength / smallest_note
+
+                for i in range (int(n_frames)):
+                    if i == 0:
+                        if not tie_active:
+                            current_chord = [1, 0, 0]
+
+                            # add in each pitch.
+                            for pitch in element.pitches:
+                                current_chord.append(pitch.pitchClass)
+                                current_chord.append(pitch.octave)
+
+                            # Pad remaining note positions for chords smaller than largest.
+                            for i in range(largest_chord - element.multisetCardinality):
+                                current_chord.append(-1)
+                                current_chord.append(-1)
+
+                            pitches.append(current_chord)
+                        else:
+                            current_chord = [2, 0, 0]
+
+                            # add in each pitch.
+                            for pitch in element.pitches:
+                                current_chord.append(pitch.pitchClass)
+                                current_chord.append(pitch.octave)
+
+                            # Pad remaining note positions for chords smaller than largest.
+                            for i in range(largest_chord - element.multisetCardinality):
+                                current_chord.append(-1)
+                                current_chord.append(-1)
+
+                            pitches.append(current_chord)
+
+                        # a tie can only begin or end at a new chord.
+                        if element.tie is not None and element.tie.type == 'start':
+                            tie_active = True
+                        else:
+                            tie_active = False
+                    else:
+                        current_chord = [2, 0, 0]
+
+                        # add in each pitch.
+                        for pitch in element.pitches:
+                            current_chord.append(pitch.pitchClass)
+                            current_chord.append(pitch.octave)
+
+
+                        # Pad remaining note positions for chords smaller than largest.
+                        for i in range(largest_chord - element.multisetCardinality):
+                            current_chord.append(-1)
+                            current_chord.append(-1)
+
+                        pitches.append(current_chord)
 
             elif type(element) is note.Rest:
                 n_frames = element.duration.quarterLength / smallest_note

@@ -8,7 +8,7 @@ from vmf_converter_core import vmf_converter
 class vmfConverterTest(unittest.TestCase):
     """Test Class for vmf_converter module"""
 
-    def test_parse_cl_args_no_output(self):
+    def test_parse_cl_args_no_output_001(self):
         """
         Tests the commandline parser.
         No output file is specified.
@@ -18,7 +18,7 @@ class vmfConverterTest(unittest.TestCase):
         assert args.input_file == 'input.mid'
         assert args.output_file is None
 
-    def test_parse_cl_args_with_output(self):
+    def test_parse_cl_args_with_output_001(self):
         """
         Tests the commandline parser.
         An output file is specified.
@@ -28,7 +28,7 @@ class vmfConverterTest(unittest.TestCase):
         assert args.input_file == 'input.mid'
         assert args.output_file == 'output.vmf'
 
-    def test_determine_source_format(self):
+    def test_determine_source_format_001(self):
         """
         Tests the extraction of file extensions.
         """
