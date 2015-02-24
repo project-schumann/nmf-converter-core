@@ -93,7 +93,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/duplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-            print(actual)
+
             assert expected == actual
 
     def test_convert_score_to_vmf_005(self):
@@ -108,7 +108,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/quintuplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-            print(actual)
+
             assert expected == actual
 
     def test_convert_score_to_vmf_006(self):
@@ -168,7 +168,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/CompoundToSimple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-            print(actual)
+
             assert expected == actual
 
     def test_convert_score_to_vmf_010(self):
@@ -183,7 +183,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/chords.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-            print(actual)
+
             assert expected == actual
 
     def test_convert_score_to_vmf_011(self):
@@ -198,7 +198,22 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/voices.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-            print(actual)
+
+            assert expected == actual
+
+    def test_convert_score_to_vmf_012(self):
+        """
+        Tests the conversion of a score stream with dynamics to a vmf data structure.
+        """
+        score = converter.parse('./tests/fixtures/dynamics.mid')
+        first_phrase = score.measures(0, 5)
+
+        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+        with open('./tests/expected/dynamics.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+
             assert expected == actual
 
     def test_scan_score_for_shortest_duration_001(self):

@@ -1,11 +1,13 @@
 from functools import reduce
-from music21 import note, chord, stream
+from music21 import note, chord, stream, dynamics
 from music21 import converter
 
 import argparse
 import sys
 import os
 from music21.common import approximateGCD
+from vmf_converter_core.dynamic_converter import DynamicConverter
+
 
 def convert_vmf_to_midi(vmfScore):
     """
@@ -155,11 +157,14 @@ def convert_score_to_vmf(score):
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range(int(n_frames)):
+
+                    dynamic = DynamicConverter.velocity_to_vmf(element.volume.velocity)
+
                     if i == 0:
                         if not tie_active:
-                            pitches.append([1, 0, 0, element.pitchClass, element.octave])
+                            pitches.append([1, dynamic, 0, element.pitchClass, element.octave])
                         else:
-                            pitches.append([2, 0, 0, element.pitchClass, element.octave])
+                            pitches.append([2, dynamic, 0, element.pitchClass, element.octave])
 
                         # Pad remaining note positions for chords smaller than largest.
                         for i in range(largest_chord - 1):
@@ -175,7 +180,7 @@ def convert_score_to_vmf(score):
                         else:
                             tie_active = False
                     else:
-                        pitches.append([2, 0, 0, element.pitchClass, element.octave])
+                        pitches.append([2, dynamic, 0, element.pitchClass, element.octave])
 
                         # Pad remaining note positions for chords smaller than largest.
                         for i in range(largest_chord - 1):
@@ -189,9 +194,12 @@ def convert_score_to_vmf(score):
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range (int(n_frames)):
+
+                    dynamic = DynamicConverter.velocity_to_vmf(element.volume.velocity)
+
                     if i == 0:
                         if not tie_active:
-                            current_chord = [1, 0, 0]
+                            current_chord = [1, dynamic, 0]
 
                             # add in each pitch.
                             for pitch in element.pitches:
@@ -208,7 +216,7 @@ def convert_score_to_vmf(score):
 
                             pitches.append(current_chord)
                         else:
-                            current_chord = [2, 0, 0]
+                            current_chord = [2, dynamic, 0]
 
                             # add in each pitch.
                             for pitch in element.pitches:
@@ -231,7 +239,7 @@ def convert_score_to_vmf(score):
                         else:
                             tie_active = False
                     else:
-                        current_chord = [2, 0, 0]
+                        current_chord = [2, dynamic, 0]
 
                         # add in each pitch.
                         for pitch in element.pitches:
