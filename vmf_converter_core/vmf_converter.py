@@ -57,6 +57,44 @@ def scan_score_for_largest_chord(score):
 
     return largest_size
 
+def convert_voices_to_parts(score):
+    """
+    Removes polyphonic voices and replaces them with part representations of its voices.
+    :param score: Score
+    """
+    parts_to_insert = {}
+
+    for i in range(len(score.parts)):
+        part = score.parts[i]
+
+        if len(list(filter(lambda m: m.hasVoices(), part.elements))) > 0:
+            # record the part id so that we can tie the voices together.
+            part_id = part.id
+
+            # break the voices into parts.
+            exploded_stream = part.explode()
+
+            # assign the part id to all exploded parts.
+            # and add the exploded parts to the original stream. Mark where to insert the parts.
+            for s in exploded_stream.parts:
+                s.part_id = part_id
+                parts_to_insert[i] = exploded_stream.parts
+
+    new_parts = list(score.parts)
+
+    # Iterate over the parts_to_insert in reverse, otherwise
+    # recorded indices are obsolete.
+    for i in sorted(parts_to_insert, reverse=True):
+        # Reverse insertion order so that ordering is properly preserved.
+        for p in reversed(parts_to_insert[i].elements):
+            new_parts.insert(i + 1, p)
+
+    # Remove the exploded part.
+    new_parts.pop(i)
+
+    # Store the new parts back as a tuple.
+    score.elements = tuple(new_parts)
+
 def scan_score_for_number_of_voices(score):
     """
     Scans the entire score to determine how many voices there are.
@@ -96,7 +134,8 @@ def convert_score_to_vmf(score):
     # The number of notes in largest chord in the file.
     largest_chord = scan_score_for_largest_chord(score)
 
-    scan_score_for_number_of_voices(score)
+    convert_voices_to_parts(score)
+    #scan_score_for_number_of_voices(score)
 
     tie_active = False
 
@@ -194,6 +233,7 @@ def convert_score_to_vmf(score):
 
                 for i in range(int(n_frames)):
                     pitches.append([0, 0, 0, 0, 0])
+
         parts.append(pitches)
 
     vmf_file = {u'header': {}, u'body': [list(tick) for tick in zip(*parts)]}
