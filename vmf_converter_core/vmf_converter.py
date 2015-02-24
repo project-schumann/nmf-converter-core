@@ -93,8 +93,8 @@ def convert_voices_to_parts(score, id_map):
         for p in reversed(parts_to_insert[i].elements):
             new_parts.insert(i + 1, p)
 
-    # Remove the exploded part.
-    new_parts.pop(i)
+        # Remove the exploded part.
+        new_parts.pop(i)
 
     # Store the new parts back as a tuple.
     score.elements = tuple(new_parts)
