@@ -63,6 +63,8 @@ class DynamicConverter:
             return 4
         elif DynamicConverter.__FFFF_MIN <= velocity <= DynamicConverter.__FFFF_MAX:
             return 5
+        else:
+            raise ValueError("Velocity must be between 0 and 127")
 
     @classmethod
     def vmf_to_velocity(cls, vmf_value):
@@ -92,3 +94,5 @@ class DynamicConverter:
             return DynamicConverter.__FFF_VELOCITY
         elif vmf_value == 5:
             return DynamicConverter.__FFFF_VELOCITY
+        else:
+            raise ValueError("VMF must be -5 to 5 excluding 0.")
