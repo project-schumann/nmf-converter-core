@@ -260,7 +260,12 @@ class vmfConverterTest(unittest.TestCase):
 
         score = converter.parse('./tests/fixtures/voices.mid')
         first_phrase = score.measures(0, 2)
-        part_voice_map = vmf_converter.scan_score_for_number_of_voices(first_phrase)
+        number_of_parts = vmf_converter.scan_score_for_number_of_parts(first_phrase)
 
-        assert part_voice_map[score.parts[0].id] == 2
-        assert part_voice_map[score.parts[1].id] == 1
+        assert number_of_parts == 3
+
+    def test_convert_vmf_to_midi_001(self):
+        """
+        Tests the conversion of a simple vmf file to a midi file.
+        """
+        assert True == False

@@ -1,11 +1,12 @@
-from functools import reduce
-from music21 import note, chord, stream, dynamics
-from music21 import converter
-
 import argparse
 import sys
 import os
+
+from music21 import note, chord, stream, meter, key
+
+from music21 import converter
 from music21.common import approximateGCD
+
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
 
@@ -13,7 +14,7 @@ def convert_vmf_to_midi(vmfScore):
     """
     Converts an vmf file to a MIDI file.
     """
-    # TODO: Implement me.
+
     pass
 
 def scan_score_for_shortest_duration(score):
@@ -101,15 +102,15 @@ def convert_voices_to_parts(score, id_map):
     # Store the new parts back as a tuple.
     score.elements = tuple(new_parts)
 
-def scan_score_for_number_of_voices(score):
+def scan_score_for_number_of_parts(score):
     """
     Scans the entire score to determine how many voices there are.
     :param score: Score
     :rtype: int
-    :return: A dictionary denoting the number of voices in each part.
+    :return: The number of parts in the score.
     """
 
-    voice_part_map = {}
+    number_of_parts = 0
 
     for part in score.parts:
         voices_in_part = 0
@@ -121,9 +122,9 @@ def scan_score_for_number_of_voices(score):
                 voices_in_measure = 1
 
             voices_in_part = max(voices_in_part, voices_in_measure)
-            voice_part_map[part.id] = voices_in_part
+        number_of_parts += voices_in_part
 
-    return voice_part_map
+    return number_of_parts
 
 def convert_score_to_vmf(score):
     """
@@ -142,6 +143,9 @@ def convert_score_to_vmf(score):
 
     # The number of notes in largest chord in the file.
     largest_chord = scan_score_for_largest_chord(score)
+
+    # Find number of parts for header.
+    number_of_parts = scan_score_for_number_of_parts(score)
 
     convert_voices_to_parts(score, id_map)
 
@@ -265,6 +269,13 @@ def convert_score_to_vmf(score):
         parts.append(pitches)
 
     vmf_file = {u'header': {}, u'body': [list(tick) for tick in zip(*parts)]}
+
+    # Prepare the header.
+    vmf_file['header']['tick_value'] = smallest_note
+    vmf_file['header']['number_of_parts'] = number_of_parts
+    # Get the first time signature (from first part).
+    vmf_file['header']['time_signature'] = score.flat.getElementsByClass(meter.TimeSignature)[0].ratioString
+    vmf_file['header']['key_signature'] = score.flat.getElementsByClass(key.KeySignature)[0].sharps
 
     return vmf_file
 
