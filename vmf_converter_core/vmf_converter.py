@@ -12,7 +12,7 @@ from music21.key import KeySignature
 from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
-from music21.stream import Score, Part, Measure
+from music21.stream import Score, Part, Measure, Stream
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
@@ -41,8 +41,8 @@ def read_vmf(vmfScore):
             part = Part()
 
             # we need new instances each time.
-            initial_key_signature = KeySignature(vmf['header']['key_signature']['1'])
-            initial_time_signature = TimeSignature(vmf['header']['time_signature']['1'])
+            initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+            initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
 
             part.append(initial_key_signature)
             part.append(initial_time_signature)
@@ -112,9 +112,18 @@ def read_vmf(vmfScore):
                 # append to the part
                 current_part.append(current_element)
 
+        # create the stream for time signature changes
+        ts_stream = Stream()
+
+        for offset, ts_str in sorted(vmf['header']['time_signature'].items()):
+            ts = TimeSignature(ts_str)
+            ts_stream.append(ts)
+            ts_stream[-1].offset = float(offset)
+
+
         # finish up the file.
         for part in score.parts:
-            part.makeMeasures(inPlace=True)
+            part.makeMeasures(inPlace=True, meterStream=ts_stream)
 
         return score
 
@@ -384,13 +393,13 @@ def convert_score_to_vmf(score):
 
     # Get the time signatures.
     for time_signature in score.flat.getElementsByClass(meter.TimeSignature):
-        vmf_file['header']['time_signature'][str(time_signature.measureNumber)] = time_signature.ratioString
+        vmf_file['header']['time_signature'][str(time_signature.offset)] = time_signature.ratioString
 
     vmf_file['header']['key_signature'] = {}
 
     # Get the key signatures
     for key_signature in score.flat.getElementsByClass(key.KeySignature):
-        vmf_file['header']['key_signature'][str(key_signature.measureNumber)] = key_signature.sharps
+        vmf_file['header']['key_signature'][str(key_signature.offset)] = key_signature.sharps
 
     return vmf_file
 

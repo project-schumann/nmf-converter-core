@@ -3,6 +3,7 @@ import json
 
 from music21 import converter
 from music21 import duration
+from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from vmf_converter_core import vmf_converter
 
@@ -124,7 +125,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/SimpleToSimple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-
+            print(actual)
             assert expected == actual
 
     def test_convert_score_to_vmf_007(self):
@@ -139,7 +140,7 @@ class vmfConverterTest(unittest.TestCase):
         with open('./tests/expected/CompoundToCompound.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
             expected = json.loads(expected_json)
-
+            print(actual)
             assert expected == actual
 
     def test_convert_score_to_vmf_008(self):
@@ -369,3 +370,35 @@ class vmfConverterTest(unittest.TestCase):
                     assert expected_element.pitch.octave == actual_element.pitch.octave
                 elif type(expected_element) is Rest:
                     assert expected_element.quarterLength == actual_element.quarterLength
+
+    def test_convert_vmf_to_midi_006(self):
+        """
+        Tests the conversion of a vmf file with a simple to simple meter change to a midi file.
+        """
+        actual_score = vmf_converter.read_vmf('./tests/expected/SimpleToSimple.vmf')
+        actual_score.write('midi', './tests/output/SimpleToSimple.mid')
+        expected_score = converter.parse('./tests/fixtures/SimpleToSimple.mid')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements, actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
+        # Check that the time signatures are encoded.
+        expected_time_signatures = expected_score.flat.getElementsByClass(TimeSignature)
+        actual_time_signatures = actual_score.flat.getElementsByClass(TimeSignature)
+
+        # Ensure we have the right number of time signatures.
+        assert len(expected_time_signatures) == len(actual_time_signatures)
+
+        for expected, actual in zip(expected_time_signatures, actual_time_signatures):
+            assert expected.ratioString == actual.ratioString
+            assert expected.offset == actual.offset

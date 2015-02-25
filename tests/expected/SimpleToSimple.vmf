@@ -3,11 +3,11 @@
     "tick_value": "1/2",
     "number_of_parts": 2,
     "time_signature": {
-        "1": "4/4",
-        "2": "2/4"
+        "0.0": "4/4",
+        "4.0": "2/4"
     },
     "key_signature": {
-        "1": 0
+        "0.0": 0
     }
   },
   "body": [
