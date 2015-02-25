@@ -3,6 +3,7 @@ import json
 
 from music21 import converter
 from music21 import duration
+from music21.note import Note, Rest
 from vmf_converter_core import vmf_converter
 
 class vmfConverterTest(unittest.TestCase):
@@ -268,12 +269,19 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a simple vmf file to a midi file.
         """
+        actual_score = vmf_converter.read_vmf('./tests/expected/simple.vmf')
 
+        expected_score = converter.parse('./tests/fixtures/simple.mid')
 
-        score = './tests/expected/simple.vmf'
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
 
-        score_stream = vmf_converter.read_vmf(score)
-
-        score_stream.write('midi', './tests/output/simple.mid')
-
-        i = 12
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements, actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
