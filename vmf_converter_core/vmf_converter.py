@@ -1,4 +1,5 @@
 import argparse
+from fractions import Fraction
 import sys
 import os
 
@@ -271,11 +272,21 @@ def convert_score_to_vmf(score):
     vmf_file = {u'header': {}, u'body': [list(tick) for tick in zip(*parts)]}
 
     # Prepare the header.
-    vmf_file['header']['tick_value'] = smallest_note
+    # Get a string of the fraction representation. Limiting the denominator to get clean values (ie 1/3). The
+    # limit of 64 ends up being a 256th note which is never really used.
+    vmf_file['header']['tick_value'] = str(Fraction(smallest_note).limit_denominator(64))
     vmf_file['header']['number_of_parts'] = number_of_parts
-    # Get the first time signature (from first part).
-    vmf_file['header']['time_signature'] = score.flat.getElementsByClass(meter.TimeSignature)[0].ratioString
-    vmf_file['header']['key_signature'] = score.flat.getElementsByClass(key.KeySignature)[0].sharps
+    vmf_file['header']['time_signature'] = {}
+
+    # Get the time signatures.
+    for time_signature in score.flat.getElementsByClass(meter.TimeSignature):
+        vmf_file['header']['time_signature'][str(time_signature.measureNumber)] = time_signature.ratioString
+
+    vmf_file['header']['key_signature'] = {}
+
+    # Get the key signatures
+    for key_signature in score.flat.getElementsByClass(key.KeySignature):
+        vmf_file['header']['key_signature'][str(key_signature.measureNumber)] = key_signature.sharps
 
     return vmf_file
 
