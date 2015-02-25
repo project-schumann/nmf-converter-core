@@ -30,7 +30,7 @@ def read_vmf(vmfScore):
 
         # Get the initial data
         number_of_parts = vmf['header']['number_of_parts']
-        smallest_note = float(vmf['header']['tick_value'])
+        smallest_note = float(Fraction(vmf['header']['tick_value']))
 
         # create the parts and first measure.
         for part_number in range(number_of_parts):
