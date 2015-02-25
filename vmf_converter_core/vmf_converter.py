@@ -21,6 +21,10 @@ def read_vmf(vmfScore):
     """
     Reads VMF to Score Stream.
     """
+
+    # Precision for rounding roubles.
+    PRECISION = 0.000000000000001
+
     with open(vmfScore, 'r') as file:
         file_contents = file.read()
         vmf = json.loads(file_contents)
@@ -61,6 +65,11 @@ def read_vmf(vmfScore):
 
                 if tick[0] == 1:
                     if current_element is not None:
+                        # check for precision and adjust
+                        rounded = round(current_element.quarterLength)
+                        if abs(current_element.quarterLength - rounded) < PRECISION:
+                            current_element.quarterLength = rounded
+
                         # append to the part
                         current_part.append(current_element)
 
@@ -75,6 +84,11 @@ def read_vmf(vmfScore):
 
                 elif tick[0] == 0 and type(current_element) is note.Note:
                     if current_element is not None:
+                        # check for precision and adjust
+                        rounded = round(current_element.quarterLength)
+                        if abs(current_element.quarterLength - rounded) < PRECISION:
+                            current_element.quarterLength = rounded
+
                         # append to the part
                         current_part.append(current_element)
 
@@ -90,6 +104,11 @@ def read_vmf(vmfScore):
 
             # Append the last element in progress.
             if current_element is not None:
+                # check for precision and adjust
+                rounded = round(current_element.quarterLength)
+                if abs(current_element.quarterLength - rounded) < PRECISION:
+                    current_element.quarterLength = rounded
+
                 # append to the part
                 current_part.append(current_element)
 
