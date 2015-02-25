@@ -216,6 +216,21 @@ class vmfConverterTest(unittest.TestCase):
 
             assert expected == actual
 
+    def test_convert_score_to_vmf_013(self):
+        """
+        Tests the conversion of a score stream with dynamics to a vmf data structure.
+        """
+        score = converter.parse('./tests/fixtures/dottedQuarter.mid')
+        first_phrase = score.measures(0, 2)
+
+        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+
+        with open('./tests/expected/dottedQuarter.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+
+            assert expected == actual
+
     def test_scan_score_for_shortest_duration_001(self):
         """
         Tests the scanning function which pre-analyzes the score to determine the
