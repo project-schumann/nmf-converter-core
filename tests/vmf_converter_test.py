@@ -3,6 +3,7 @@ import json
 
 from music21 import converter
 from music21 import duration
+from music21.chord import Chord
 from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from vmf_converter_core import vmf_converter
@@ -481,6 +482,44 @@ class vmfConverterTest(unittest.TestCase):
         # Assert that the notes and rests match
         for expected, actual in zip(expected_score.parts, actual_score.parts):
             for expected_element, actual_element in zip(expected.flat.notesAndRests.elements, actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
+        # Check that the time signatures are encoded.
+        expected_time_signatures = expected_score.flat.getElementsByClass(TimeSignature)
+        actual_time_signatures = actual_score.flat.getElementsByClass(TimeSignature)
+
+        # Ensure we have the right number of time signatures.
+        assert len(expected_time_signatures) == len(actual_time_signatures)
+
+        for expected, actual in zip(expected_time_signatures, actual_time_signatures):
+            assert expected.ratioString == actual.ratioString
+            assert expected.offset == actual.offset
+
+    def test_convert_vmf_to_midi_010(self):
+        """
+        Tests the conversion of a vmf file with chords to a midi file.
+        """
+        actual_score = vmf_converter.read_vmf('./tests/expected/chords.vmf')
+
+        expected_score = converter.parse('./tests/fixtures/chords.mid')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements, actual.flat.notesAndRests.elements):
+                if type(expected_element) is Chord:
+                    assert len(expected_element.pitches) == len(actual_element.pitches)
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    for actual_pitch, expected_pitch in zip(expected_element.pitches, actual_element.pitches):
+                        assert expected_pitch.pitchClass == actual_pitch.pitchClass
+                        assert expected_pitch.octave == actual_pitch.octave
                 if type(expected_element) is Note:
                     assert expected_element.quarterLength == actual_element.quarterLength
                     assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass

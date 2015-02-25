@@ -7,6 +7,7 @@ import os
 from music21 import note, chord, stream, meter, key
 
 from music21 import converter
+from music21.chord import Chord
 from music21.common import approximateGCD
 from music21.key import KeySignature
 from music21.meter import TimeSignature
@@ -16,6 +17,21 @@ from music21.stream import Score, Part, Measure, Stream
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
+def find_number_of_notes_in_tick(tick):
+    """
+    Finds the number of notes in a tick.
+    :param tick: The tick to evaluate.
+    :return: An integer representing the number of notes.
+    """
+
+    #The first note bit is at position 3.
+    INDEX_OF_FIRST_NOTE_BIT = 3
+    # Part id is the last bit.
+    INDEX_OF_PART_ID_BIT = -1
+
+    # Return all the bits describing pitches, and divide by 2 (each note uses 2 bits).
+    # Remove all bit pairs with -1 from the count.
+    return (len(tick[3:-1]) / 2) - (tick[3:-1].count(-1) / 2)
 
 def read_vmf(vmfScore):
     """
@@ -24,6 +40,8 @@ def read_vmf(vmfScore):
 
     # Precision for rounding roubles.
     PRECISION = 0.000000000000001
+    BASIC_TICK_LENGTH = 6
+    FIRST_PITCH_INDEX = 3
 
     with open(vmfScore, 'r') as file:
         file_contents = file.read()
@@ -73,8 +91,22 @@ def read_vmf(vmfScore):
                         # append to the part
                         current_part.append(current_element)
 
-                    # create a new note
-                    current_element = Note(Pitch(pitchClass=tick[3], octave=tick[4]))
+                    # Find how many notes to write. This will always be an int.
+                    number_of_notes = int(find_number_of_notes_in_tick(tick))
+
+                    if number_of_notes == 1:
+                        # create a new note
+                        current_element = Note(Pitch(pitchClass=tick[3], octave=tick[4]))
+                    else:
+                        pitches = []
+
+                        # create the pitches. From the beginning to the end of the pitch section of the tick.
+                        for i in range(FIRST_PITCH_INDEX, number_of_notes + 2 * number_of_notes, 2):
+                            pitch = Pitch(pitchClass=tick[i], octave=tick[i+1])
+                            pitches.append(pitch)
+
+                        # create a new chord with these pitches.
+                        current_element = Chord(pitches)
 
                     # set the value for this tick.
                     current_element.quarterLength = smallest_note
@@ -119,7 +151,6 @@ def read_vmf(vmfScore):
             ts = TimeSignature(ts_str)
             ts_stream.append(ts)
             ts_stream[-1].offset = float(offset)
-
 
         # finish up the file.
         for part in score.parts:
