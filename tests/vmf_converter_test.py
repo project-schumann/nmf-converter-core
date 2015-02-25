@@ -268,4 +268,12 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a simple vmf file to a midi file.
         """
-        assert True == False
+
+
+        score = './tests/expected/simple.vmf'
+
+        score_stream = vmf_converter.read_vmf(score)
+
+        score_stream.write('midi', './tests/output/simple.mid')
+
+        i = 12

@@ -1,5 +1,6 @@
 import argparse
 from fractions import Fraction
+import json
 import sys
 import os
 
@@ -7,16 +8,96 @@ from music21 import note, chord, stream, meter, key
 
 from music21 import converter
 from music21.common import approximateGCD
+from music21.key import KeySignature
+from music21.meter import TimeSignature
+from music21.note import Note, Rest
+from music21.pitch import Pitch
+from music21.stream import Score, Part, Measure
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
 
-def convert_vmf_to_midi(vmfScore):
+def read_vmf(vmfScore):
     """
-    Converts an vmf file to a MIDI file.
+    Reads VMF to Score Stream.
     """
+    with open(vmfScore, 'r') as file:
+        file_contents = file.read()
+        vmf = json.loads(file_contents)
 
-    pass
+        # create a score
+        score = Score()
+
+        # Get the initial data
+        number_of_parts = vmf['header']['number_of_parts']
+        smallest_note = float(vmf['header']['tick_value'])
+
+        # create the parts and first measure.
+        for part_number in range(number_of_parts):
+            part = Part()
+
+            # we need new instances each time.
+            initial_key_signature = KeySignature(vmf['header']['key_signature']['1'])
+            initial_time_signature = TimeSignature(vmf['header']['time_signature']['1'])
+
+            part.append(initial_key_signature)
+            part.append(initial_time_signature)
+
+            score.append(part)
+
+        # get the body of the vmf
+        body = vmf['body']
+
+        # We do this because we want to do each part at a time.
+        for part_number in range(number_of_parts):
+            # Get all ticks for a given part.
+            part = [tick[part_number] for tick in body]
+            current_part = score.parts[part_number]
+
+            current_element = None
+
+            # iterate over each tick
+            for tick in part:
+
+                if tick[0] == 1:
+                    if current_element is not None:
+                        # append to the part
+                        current_part.append(current_element)
+
+                    # create a new note
+                    current_element = Note(Pitch(pitchClass=tick[3], octave=tick[4]))
+
+                    # set the value for this tick.
+                    current_element.quarterLength = smallest_note
+                elif tick[0] == 2:
+                    # extend previous note
+                    current_element.quarterLength += smallest_note
+
+                elif tick[0] == 0 and type(current_element) is note.Note:
+                    if current_element is not None:
+                        # append to the part
+                        current_part.append(current_element)
+
+                    # create new rest
+                    current_element = Rest()
+
+                    # Set the value for this tick.
+                    current_element.quarterLength = smallest_note
+
+                elif tick[0] == 0 and type(current_element) is note.Rest:
+                    # extend previous rest.
+                    current_element.quarterLength = smallest_note
+
+            # Append the last element in progress.
+            if current_element is not None:
+                # append to the part
+                current_part.append(current_element)
+
+        # finish up the file.
+        for part in score.parts:
+            part.makeMeasures(inPlace=True)
+
+        return score
 
 def scan_score_for_shortest_duration(score):
     """
@@ -37,6 +118,7 @@ def scan_score_for_shortest_duration(score):
 
     # We need a list, not a set. Convert here. The GCD is the largest common subdivision we can use.
     return approximateGCD(list(durations))
+
 
 def scan_score_for_largest_chord(score):
     """
@@ -59,6 +141,7 @@ def scan_score_for_largest_chord(score):
         largest_size = max(c.multisetCardinality, largest_size)
 
     return largest_size
+
 
 def convert_voices_to_parts(score, id_map):
     """
@@ -103,6 +186,7 @@ def convert_voices_to_parts(score, id_map):
     # Store the new parts back as a tuple.
     score.elements = tuple(new_parts)
 
+
 def scan_score_for_number_of_parts(score):
     """
     Scans the entire score to determine how many voices there are.
@@ -126,6 +210,7 @@ def scan_score_for_number_of_parts(score):
         number_of_parts += voices_in_part
 
     return number_of_parts
+
 
 def convert_score_to_vmf(score):
     """
@@ -198,7 +283,7 @@ def convert_score_to_vmf(score):
             elif type(element) is chord.Chord:
                 n_frames = element.duration.quarterLength / smallest_note
 
-                for i in range (int(n_frames)):
+                for i in range(int(n_frames)):
 
                     dynamic = DynamicConverter.velocity_to_vmf(element.volume.velocity)
 
@@ -290,6 +375,7 @@ def convert_score_to_vmf(score):
 
     return vmf_file
 
+
 def determine_source_format(input_file_path):
     """
     Determines the format of the input file based on its extension.
@@ -300,6 +386,7 @@ def determine_source_format(input_file_path):
     """
     file_name, file_extension = os.path.splitext(input_file_path)
     return file_extension
+
 
 def parse_cl_args(arg_vector):
     """
@@ -316,6 +403,7 @@ def parse_cl_args(arg_vector):
 
     return parser.parse_args(arg_vector)
 
+
 def run():
     """
     Converts to and from vmf into MIDI.
@@ -325,11 +413,12 @@ def run():
     source_format = determine_source_format(args.input_file)
 
     if source_format is '.vmf':
-        convert_vmf_to_midi(converter.parse(args.input_file))
+        read_vmf(converter.parse(args.input_file))
     elif source_format is '.midi':
         convert_score_to_vmf(converter.parse(args.input_file))
     else:
         print('Please provide either an vmf or midi file as your input.')
+
 
 if __name__ == '__main__':
     run()
