@@ -440,8 +440,40 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with a simple to compound meter change to a midi file.
         """
         actual_score = vmf_converter.read_vmf('./tests/expected/SimpleToCompound.vmf')
-        actual_score.write('midi', './tests/output/test.mid')
+
         expected_score = converter.parse('./tests/fixtures/SimpleToCompound.mid')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements, actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
+        # Check that the time signatures are encoded.
+        expected_time_signatures = expected_score.flat.getElementsByClass(TimeSignature)
+        actual_time_signatures = actual_score.flat.getElementsByClass(TimeSignature)
+
+        # Ensure we have the right number of time signatures.
+        assert len(expected_time_signatures) == len(actual_time_signatures)
+
+        for expected, actual in zip(expected_time_signatures, actual_time_signatures):
+            assert expected.ratioString == actual.ratioString
+            assert expected.offset == actual.offset
+
+    def test_convert_vmf_to_midi_009(self):
+        """
+        Tests the conversion of a vmf file with a compound to simple meter change to a midi file.
+        """
+        actual_score = vmf_converter.read_vmf('./tests/expected/CompoundToSimple.vmf')
+
+        expected_score = converter.parse('./tests/fixtures/CompoundToSimple.mid')
 
         # Assert that the file has the right number of parts.
         assert len(expected_score.parts) == len(actual_score.parts)
