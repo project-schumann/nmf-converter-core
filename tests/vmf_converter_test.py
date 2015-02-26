@@ -593,3 +593,23 @@ class vmfConverterTest(unittest.TestCase):
                     assert expected_element.volume.velocity == actual_element.volume.velocity
                 elif type(expected_element) is Rest:
                     assert expected_element.quarterLength == actual_element.quarterLength
+
+    def test_find_number_of_notes_in_tick_001(self):
+        """
+        Tests finding the number of notes in a tick
+        """
+        tick = [1,-1,0,0,4,-1,-1,-1,-1,0]
+
+        number_of_notes = vmf_converter.find_number_of_notes_in_tick(tick)
+
+        assert number_of_notes == 1
+
+    def test_find_number_of_notes_in_tick_002(self):
+        """
+        Tests finding the number of notes in a tick
+        """
+        tick = [1,-1,0,0,4,0,0,-1,-1,0]
+
+        number_of_notes = vmf_converter.find_number_of_notes_in_tick(tick)
+
+        assert number_of_notes == 2
