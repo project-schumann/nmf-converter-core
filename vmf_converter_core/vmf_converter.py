@@ -14,6 +14,7 @@ from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
 from music21.stream import Score, Part, Measure, Stream, Voice
+from vmf_converter_core.articulation_converter import ArticulationConverter
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
@@ -43,6 +44,7 @@ def read_vmf(vmfScore):
     BASIC_TICK_LENGTH = 6
     FIRST_PITCH_INDEX = 3
     DYNAMIC_BIT = 1
+    ARTICULATION_BIT = 2
 
     parts_converted = {}
 
@@ -146,6 +148,9 @@ def read_vmf(vmfScore):
 
                     # set the velocity of the note.
                     current_element.volume.velocity = DynamicConverter.vmf_to_velocity(tick[DYNAMIC_BIT])
+                    # set the articulation
+                    if tick[ARTICULATION_BIT] != 0:
+                        current_element.articulations.append(ArticulationConverter.vmf_to_articulation(tick[ARTICULATION_BIT]))
 
                     # set the value for this tick.
                     current_element.quarterLength = smallest_note
