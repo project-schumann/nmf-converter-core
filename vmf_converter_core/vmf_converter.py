@@ -13,7 +13,7 @@ from music21.key import KeySignature
 from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
-from music21.stream import Score, Part, Measure, Stream
+from music21.stream import Score, Part, Measure, Stream, Voice
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
@@ -43,6 +43,8 @@ def read_vmf(vmfScore):
     BASIC_TICK_LENGTH = 6
     FIRST_PITCH_INDEX = 3
 
+    parts_converted = {}
+
     with open(vmfScore, 'r') as file:
         file_contents = file.read()
         vmf = json.loads(file_contents)
@@ -52,34 +54,66 @@ def read_vmf(vmfScore):
 
         # Get the initial data
         number_of_parts = vmf['header']['number_of_parts']
+        number_of_voices = vmf['header']['number_of_voices']
         smallest_note = float(Fraction(vmf['header']['tick_value']))
 
         # create the parts and first measure.
-        for part_number in range(number_of_parts):
+        for voice_number in range(number_of_parts):
             part = Part()
+            voice = Voice()
 
             # we need new instances each time.
             initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
             initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
 
-            part.append(initial_key_signature)
-            part.append(initial_time_signature)
+            voice.append(initial_key_signature)
+            voice.append(initial_time_signature)
+
+            part.append(voice)
 
             score.append(part)
 
         # get the body of the vmf
         body = vmf['body']
 
+        part_number = 0
+
         # We do this because we want to do each part at a time.
-        for part_number in range(number_of_parts):
+        for voice_number in range(number_of_voices):
             # Get all ticks for a given part.
-            part = [tick[part_number] for tick in body]
-            current_part = score.parts[part_number]
+            part = [tick[voice_number] for tick in body]
 
             current_element = None
+            current_voice = None
 
             # iterate over each tick
             for tick in part:
+
+                if current_voice is None:
+                    # Get the parent part if it exists.
+                    try:
+                        current_part = parts_converted[tick[-1]]
+
+                        # add a new voice and write to it.
+                        voice = Voice()
+
+                        initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+                        initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
+
+                        voice.append(initial_key_signature)
+                        voice.append(initial_time_signature)
+
+                        current_part.append(voice)
+
+                    except KeyError:
+                        # Add it to our dictionary otherwise.
+                        current_part = score.parts[part_number]
+                        part_number += 1
+
+                        parts_converted[tick[-1]] = current_part
+
+                    # Get the last voice.
+                    current_voice = current_part.voices[-1]
 
                 if tick[0] == 1:
                     if current_element is not None:
@@ -89,7 +123,7 @@ def read_vmf(vmfScore):
                             current_element.quarterLength = rounded
 
                         # append to the part
-                        current_part.append(current_element)
+                        current_voice.append(current_element)
 
                     # Find how many notes to write. This will always be an int.
                     number_of_notes = int(find_number_of_notes_in_tick(tick))
@@ -122,7 +156,7 @@ def read_vmf(vmfScore):
                             current_element.quarterLength = rounded
 
                         # append to the part
-                        current_part.append(current_element)
+                        current_voice.append(current_element)
 
                     # create new rest
                     current_element = Rest()
@@ -142,7 +176,7 @@ def read_vmf(vmfScore):
                     current_element.quarterLength = rounded
 
                 # append to the part
-                current_part.append(current_element)
+                current_voice.append(current_element)
 
         # create the stream for time signature changes
         ts_stream = Stream()
@@ -154,7 +188,8 @@ def read_vmf(vmfScore):
 
         # finish up the file.
         for part in score.parts:
-            part.makeMeasures(inPlace=True, meterStream=ts_stream)
+            for voice in part.voices:
+                voice.makeMeasures(inPlace=True, meterStream=ts_stream)
 
         return score
 
@@ -246,7 +281,7 @@ def convert_voices_to_parts(score, id_map):
     score.elements = tuple(new_parts)
 
 
-def scan_score_for_number_of_parts(score):
+def scan_score_for_number_of_voices(score):
     """
     Scans the entire score to determine how many voices there are.
     :param score: Score
@@ -290,7 +325,7 @@ def convert_score_to_vmf(score):
     largest_chord = scan_score_for_largest_chord(score)
 
     # Find number of parts for header.
-    number_of_parts = scan_score_for_number_of_parts(score)
+    number_of_parts = len(score.parts)
 
     convert_voices_to_parts(score, id_map)
 
@@ -419,6 +454,7 @@ def convert_score_to_vmf(score):
     # Get a string of the fraction representation. Limiting the denominator to get clean values (ie 1/3). The
     # limit of 64 ends up being a 256th note which is never really used.
     vmf_file['header']['tick_value'] = str(Fraction(smallest_note).limit_denominator(64))
+    vmf_file['header']['number_of_voices'] = scan_score_for_number_of_voices(score)
     vmf_file['header']['number_of_parts'] = number_of_parts
     vmf_file['header']['time_signature'] = {}
 
