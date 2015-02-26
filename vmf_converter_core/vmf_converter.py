@@ -18,6 +18,7 @@ from vmf_converter_core.articulation_converter import ArticulationConverter
 
 from vmf_converter_core.dynamic_converter import DynamicConverter
 
+
 def find_number_of_notes_in_tick(tick):
     """
     Finds the number of notes in a tick.
@@ -25,7 +26,7 @@ def find_number_of_notes_in_tick(tick):
     :return: An integer representing the number of notes.
     """
 
-    #The first note bit is at position 3.
+    # The first note bit is at position 3.
     INDEX_OF_FIRST_NOTE_BIT = 3
     # Part id is the last bit.
     INDEX_OF_PART_ID_BIT = -1
@@ -33,6 +34,7 @@ def find_number_of_notes_in_tick(tick):
     # Return all the bits describing pitches, and divide by 2 (each note uses 2 bits).
     # Remove all bit pairs with -1 from the count.
     return (len(tick[3:-1]) / 2) - (tick[3:-1].count(-1) / 2)
+
 
 def read_vmf(vmfScore):
     """
@@ -138,8 +140,8 @@ def read_vmf(vmfScore):
                         pitches = []
 
                         # create the pitches. From the beginning to the end of the pitch section of the tick.
-                        for i in range(FIRST_PITCH_INDEX, number_of_notes + 2 * number_of_notes, 2):
-                            pitch = Pitch(pitchClass=tick[i], octave=tick[i+1])
+                        for i in range(FIRST_PITCH_INDEX, FIRST_PITCH_INDEX + 2 * number_of_notes, 2):
+                            pitch = Pitch(pitchClass=tick[i], octave=tick[i + 1])
                             pitches.append(pitch)
 
                         # create a new chord with these pitches.
@@ -150,7 +152,8 @@ def read_vmf(vmfScore):
                     current_element.volume.velocity = DynamicConverter.vmf_to_velocity(tick[DYNAMIC_BIT])
                     # set the articulation
                     if tick[ARTICULATION_BIT] != 0:
-                        current_element.articulations.append(ArticulationConverter.vmf_to_articulation(tick[ARTICULATION_BIT]))
+                        current_element.articulations.append(
+                            ArticulationConverter.vmf_to_articulation(tick[ARTICULATION_BIT]))
 
                     # set the value for this tick.
                     current_element.quarterLength = smallest_note
@@ -158,7 +161,7 @@ def read_vmf(vmfScore):
                     # extend previous note
                     current_element.quarterLength += smallest_note
 
-                elif tick[0] == 0 and type(current_element) is note.Note:
+                elif tick[0] == 0 and (type(current_element) is note.Note or current_element is None):
                     if current_element is not None:
                         # check for precision and adjust
                         rounded = round(current_element.quarterLength)
@@ -176,7 +179,7 @@ def read_vmf(vmfScore):
 
                 elif tick[0] == 0 and type(current_element) is note.Rest:
                     # extend previous rest.
-                    current_element.quarterLength = smallest_note
+                    current_element.quarterLength += smallest_note
 
             # Append the last element in progress.
             if current_element is not None:
@@ -202,6 +205,7 @@ def read_vmf(vmfScore):
                 voice.makeMeasures(inPlace=True, meterStream=ts_stream)
 
         return score
+
 
 def scan_score_for_shortest_duration(score):
     """
@@ -259,7 +263,7 @@ def convert_voices_to_parts(score, id_map):
     for i in range(len(score.parts)):
         part = score.parts[i]
 
-        if len(list(filter(lambda m: m.hasVoices(), part.elements))) > 0:
+        if len(list(filter(lambda m: issubclass(type(m), Stream) and m.hasVoices(), part.elements))) > 0:
             # break the voices into parts.
             exploded_stream = part.explode()
 
@@ -454,7 +458,15 @@ def convert_score_to_vmf(score):
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range(int(n_frames)):
-                    pitches.append([0, 0, 0, 0, 0, id_map[part.id]])
+                    pitches.append([0, 0, 0])
+
+                    # Pad remaining note positions:
+                    for i in range(largest_chord - 1):
+                        pitches[-1].append(0)
+                        pitches[-1].append(0)
+
+                    # Finally add the part id.
+                    pitches[-1].append(id_map[part.id])
 
         parts.append(pitches)
 
