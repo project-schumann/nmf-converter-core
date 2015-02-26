@@ -42,6 +42,7 @@ def read_vmf(vmfScore):
     PRECISION = 0.000000000000001
     BASIC_TICK_LENGTH = 6
     FIRST_PITCH_INDEX = 3
+    DYNAMIC_BIT = 1
 
     parts_converted = {}
 
@@ -141,6 +142,10 @@ def read_vmf(vmfScore):
 
                         # create a new chord with these pitches.
                         current_element = Chord(pitches)
+
+
+                    # set the velocity of the note.
+                    current_element.volume.velocity = DynamicConverter.vmf_to_velocity(tick[DYNAMIC_BIT])
 
                     # set the value for this tick.
                     current_element.quarterLength = smallest_note
