@@ -68,8 +68,14 @@ def read_vmf(vmfScore):
             voice = Voice()
 
             # we need new instances each time.
-            initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+            try:
+                initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+            except KeyError:
+                # Key Signatures aren't mandatory. Default to C major
+                initial_key_signature = KeySignature(0)
+
             initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
+
 
             voice.append(initial_key_signature)
             voice.append(initial_time_signature)
@@ -529,10 +535,15 @@ def run():
 
     source_format = determine_source_format(args.input_file)
 
-    if source_format is '.vmf':
-        read_vmf(converter.parse(args.input_file))
-    elif source_format is '.midi':
-        convert_score_to_vmf(converter.parse(args.input_file))
+    if source_format == '.vmf':
+        score = read_vmf(args.input_file)
+        score.write('midi', 'output.mid')
+    elif source_format == '.mid':
+        vmf = convert_score_to_vmf(converter.parse(args.input_file))
+        vmfJSON = json.dumps(vmf)
+        file = open('output.vmf', 'w')
+        file.write(vmfJSON)
+        file.close()
     else:
         print('Please provide either an vmf or midi file as your input.')
 
