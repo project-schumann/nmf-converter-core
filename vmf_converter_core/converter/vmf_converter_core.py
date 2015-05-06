@@ -35,12 +35,11 @@ def find_number_of_notes_in_tick(tick):
     # Remove all bit pairs with -1 from the count.
     return (len(tick[3:-1]) / 2) - (tick[3:-1].count(-1) / 2)
 
-
-def read_vmf(vmfScore):
+def read_vmf_string(vmfString):
     """
-    Reads VMF to Score Stream.
+    Reads VMF data from a string to a Score Stream.
     """
-
+    
     # Precision for rounding roubles.
     PRECISION = 0.000000000000001
     BASIC_TICK_LENGTH = 6
@@ -49,169 +48,176 @@ def read_vmf(vmfScore):
     ARTICULATION_BIT = 2
 
     parts_converted = {}
+    
+    vmf = json.loads(vmfString)
+    
+    # create a score
+    score = Score()
+
+    # Get the initial data
+    number_of_parts = vmf['header']['number_of_parts']
+    number_of_voices = vmf['header']['number_of_voices']
+    smallest_note = float(Fraction(vmf['header']['tick_value']))
+
+    # create the parts and first measure.
+    for voice_number in range(number_of_parts):
+        part = Part()
+        voice = Voice()
+
+        # we need new instances each time.
+        try:
+            initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+        except KeyError:
+            # Key Signatures aren't mandatory. Default to C major
+            initial_key_signature = KeySignature(0)
+
+        initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
+
+
+        voice.append(initial_key_signature)
+        voice.append(initial_time_signature)
+
+        part.append(voice)
+
+        score.append(part)
+
+    # get the body of the vmf
+    body = vmf['body']
+
+    part_number = 0
+
+    # We do this because we want to do each part at a time.
+    for voice_number in range(number_of_voices):
+        # Get all ticks for a given part.
+        part = [tick[voice_number] for tick in body]
+
+        current_element = None
+        current_voice = None
+
+        # iterate over each tick
+        for tick in part:
+
+            if current_voice is None:
+                # Get the parent part if it exists.
+                try:
+                    current_part = parts_converted[tick[-1]]
+
+                    # add a new voice and write to it.
+                    voice = Voice()
+
+                    initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
+                    initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
+
+                    voice.append(initial_key_signature)
+                    voice.append(initial_time_signature)
+
+                    current_part.append(voice)
+
+                except KeyError:
+                    # Add it to our dictionary otherwise.
+                    current_part = score.parts[part_number]
+                    part_number += 1
+
+                    parts_converted[tick[-1]] = current_part
+
+                # Get the last voice.
+                current_voice = current_part.voices[-1]
+
+            if tick[0] == 1:
+                if current_element is not None:
+                    # check for precision and adjust
+                    rounded = round(current_element.quarterLength)
+                    if abs(current_element.quarterLength - rounded) < PRECISION:
+                        current_element.quarterLength = rounded
+
+                    # append to the part
+                    current_voice.append(current_element)
+
+                # Find how many notes to write. This will always be an int.
+                number_of_notes = int(find_number_of_notes_in_tick(tick))
+
+                if number_of_notes == 1:
+                    # create a new note
+                    current_element = Note(Pitch(pitchClass=tick[3], octave=tick[4]))
+                else:
+                    pitches = []
+
+                    # create the pitches. From the beginning to the end of the pitch section of the tick.
+                    for i in range(FIRST_PITCH_INDEX, FIRST_PITCH_INDEX + 2 * number_of_notes, 2):
+                        pitch = Pitch(pitchClass=tick[i], octave=tick[i + 1])
+                        pitches.append(pitch)
+
+                    # create a new chord with these pitches.
+                    current_element = Chord(pitches)
+
+
+                # set the velocity of the note.
+                current_element.volume.velocity = DynamicConverter.vmf_to_velocity(tick[DYNAMIC_BIT])
+                # set the articulation
+                if tick[ARTICULATION_BIT] != 0:
+                    current_element.articulations.append(
+                        ArticulationConverter.vmf_to_articulation(tick[ARTICULATION_BIT]))
+
+                # set the value for this tick.
+                current_element.quarterLength = smallest_note
+            elif tick[0] == 2:
+                # extend previous note
+                current_element.quarterLength += smallest_note
+
+            elif tick[0] == 0 and (type(current_element) is note.Note or current_element is None):
+                if current_element is not None:
+                    # check for precision and adjust
+                    rounded = round(current_element.quarterLength)
+                    if abs(current_element.quarterLength - rounded) < PRECISION:
+                        current_element.quarterLength = rounded
+
+                    # append to the part
+                    current_voice.append(current_element)
+
+                # create new rest
+                current_element = Rest()
+
+                # Set the value for this tick.
+                current_element.quarterLength = smallest_note
+
+            elif tick[0] == 0 and type(current_element) is note.Rest:
+                # extend previous rest.
+                current_element.quarterLength += smallest_note
+
+        # Append the last element in progress.
+        if current_element is not None:
+            # check for precision and adjust
+            rounded = round(current_element.quarterLength)
+            if abs(current_element.quarterLength - rounded) < PRECISION:
+                current_element.quarterLength = rounded
+
+            # append to the part
+            current_voice.append(current_element)
+
+    # create the stream for time signature changes
+    ts_stream = Stream()
+
+    for offset, ts_str in sorted(vmf['header']['time_signature'].items()):
+        ts = TimeSignature(ts_str)
+        ts_stream.append(ts)
+        ts_stream[-1].offset = float(offset)
+
+    # finish up the file.
+    for part in score.parts:
+        for voice in part.voices:
+            voice.makeMeasures(inPlace=True, meterStream=ts_stream)
+
+    return score
+
+def read_vmf_file(vmfScore):
+    """
+    Reads VMF to Score Stream.
+    """
 
     with open(vmfScore, 'r') as file:
         file_contents = file.read()
-        vmf = json.loads(file_contents)
-
-        # create a score
-        score = Score()
-
-        # Get the initial data
-        number_of_parts = vmf['header']['number_of_parts']
-        number_of_voices = vmf['header']['number_of_voices']
-        smallest_note = float(Fraction(vmf['header']['tick_value']))
-
-        # create the parts and first measure.
-        for voice_number in range(number_of_parts):
-            part = Part()
-            voice = Voice()
-
-            # we need new instances each time.
-            try:
-                initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
-            except KeyError:
-                # Key Signatures aren't mandatory. Default to C major
-                initial_key_signature = KeySignature(0)
-
-            initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
-
-
-            voice.append(initial_key_signature)
-            voice.append(initial_time_signature)
-
-            part.append(voice)
-
-            score.append(part)
-
-        # get the body of the vmf
-        body = vmf['body']
-
-        part_number = 0
-
-        # We do this because we want to do each part at a time.
-        for voice_number in range(number_of_voices):
-            # Get all ticks for a given part.
-            part = [tick[voice_number] for tick in body]
-
-            current_element = None
-            current_voice = None
-
-            # iterate over each tick
-            for tick in part:
-
-                if current_voice is None:
-                    # Get the parent part if it exists.
-                    try:
-                        current_part = parts_converted[tick[-1]]
-
-                        # add a new voice and write to it.
-                        voice = Voice()
-
-                        initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
-                        initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
-
-                        voice.append(initial_key_signature)
-                        voice.append(initial_time_signature)
-
-                        current_part.append(voice)
-
-                    except KeyError:
-                        # Add it to our dictionary otherwise.
-                        current_part = score.parts[part_number]
-                        part_number += 1
-
-                        parts_converted[tick[-1]] = current_part
-
-                    # Get the last voice.
-                    current_voice = current_part.voices[-1]
-
-                if tick[0] == 1:
-                    if current_element is not None:
-                        # check for precision and adjust
-                        rounded = round(current_element.quarterLength)
-                        if abs(current_element.quarterLength - rounded) < PRECISION:
-                            current_element.quarterLength = rounded
-
-                        # append to the part
-                        current_voice.append(current_element)
-
-                    # Find how many notes to write. This will always be an int.
-                    number_of_notes = int(find_number_of_notes_in_tick(tick))
-
-                    if number_of_notes == 1:
-                        # create a new note
-                        current_element = Note(Pitch(pitchClass=tick[3], octave=tick[4]))
-                    else:
-                        pitches = []
-
-                        # create the pitches. From the beginning to the end of the pitch section of the tick.
-                        for i in range(FIRST_PITCH_INDEX, FIRST_PITCH_INDEX + 2 * number_of_notes, 2):
-                            pitch = Pitch(pitchClass=tick[i], octave=tick[i + 1])
-                            pitches.append(pitch)
-
-                        # create a new chord with these pitches.
-                        current_element = Chord(pitches)
-
-
-                    # set the velocity of the note.
-                    current_element.volume.velocity = DynamicConverter.vmf_to_velocity(tick[DYNAMIC_BIT])
-                    # set the articulation
-                    if tick[ARTICULATION_BIT] != 0:
-                        current_element.articulations.append(
-                            ArticulationConverter.vmf_to_articulation(tick[ARTICULATION_BIT]))
-
-                    # set the value for this tick.
-                    current_element.quarterLength = smallest_note
-                elif tick[0] == 2:
-                    # extend previous note
-                    current_element.quarterLength += smallest_note
-
-                elif tick[0] == 0 and (type(current_element) is note.Note or current_element is None):
-                    if current_element is not None:
-                        # check for precision and adjust
-                        rounded = round(current_element.quarterLength)
-                        if abs(current_element.quarterLength - rounded) < PRECISION:
-                            current_element.quarterLength = rounded
-
-                        # append to the part
-                        current_voice.append(current_element)
-
-                    # create new rest
-                    current_element = Rest()
-
-                    # Set the value for this tick.
-                    current_element.quarterLength = smallest_note
-
-                elif tick[0] == 0 and type(current_element) is note.Rest:
-                    # extend previous rest.
-                    current_element.quarterLength += smallest_note
-
-            # Append the last element in progress.
-            if current_element is not None:
-                # check for precision and adjust
-                rounded = round(current_element.quarterLength)
-                if abs(current_element.quarterLength - rounded) < PRECISION:
-                    current_element.quarterLength = rounded
-
-                # append to the part
-                current_voice.append(current_element)
-
-        # create the stream for time signature changes
-        ts_stream = Stream()
-
-        for offset, ts_str in sorted(vmf['header']['time_signature'].items()):
-            ts = TimeSignature(ts_str)
-            ts_stream.append(ts)
-            ts_stream[-1].offset = float(offset)
-
-        # finish up the file.
-        for part in score.parts:
-            for voice in part.voices:
-                voice.makeMeasures(inPlace=True, meterStream=ts_stream)
-
-        return score
-
+        
+        return read_vmf_string(file_contents)
 
 def scan_score_for_shortest_duration(score):
     """
