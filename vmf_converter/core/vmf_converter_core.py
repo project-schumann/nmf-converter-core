@@ -14,9 +14,9 @@ from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
 from music21.stream import Score, Part, Measure, Stream, Voice
-from vmf_converter_core.converter.articulation_converter import ArticulationConverter
+from vmf_converter.core.articulation_converter import ArticulationConverter
 
-from vmf_converter_core.converter.dynamic_converter import DynamicConverter
+from vmf_converter.core.dynamic_converter import DynamicConverter
 
 
 def find_number_of_notes_in_tick(tick):
