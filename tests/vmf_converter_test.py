@@ -206,13 +206,13 @@ class vmfConverterTest(unittest.TestCase):
 
             assert expected == actual
 
-    def test_scan_score_for_shortest_duration_001(self):
+    def test_scan_score_durations_001(self):
         """
         Tests the scanning function which pre-analyzes the score to determine the
         smallest necessary note value to accurately encode the score as a vmf.
         """
         score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
-        shortest_duration = vmf_converter_core.scan_score_for_shortest_duration(score)
+        shortest_duration = vmf_converter_core.scan_score_durations(score)
 
         assert shortest_duration == duration.convertTypeToQuarterLength('eighth')
 

@@ -1,6 +1,6 @@
 """Bi-directional converter for the vector music format (VMF)."""
 from music21.converter.subConverters import SubConverter
-from vmf_converter_core.converter import vmf_converter_core
+import vmf_converter.core.vmf_converter_core as vmf_converter_core
 
 class VMFConverter(SubConverter):
     """Converter for parsing and writing VMF files."""

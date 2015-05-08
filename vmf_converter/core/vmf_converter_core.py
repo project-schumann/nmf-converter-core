@@ -1,23 +1,31 @@
-import argparse
+"""Main logic for parsing a VMF file."""
 from fractions import Fraction
 import json
-import sys
-import os
 
 from music21 import note, chord, stream, meter, key
 
-from music21 import converter
 from music21.chord import Chord
 from music21.common import approximateGCD
 from music21.key import KeySignature
 from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
-from music21.stream import Score, Part, Measure, Stream, Voice
+from music21.stream import Score, Part, Stream, Voice
 from vmf_converter.core.articulation_converter import ArticulationConverter
 
 from vmf_converter.core.dynamic_converter import DynamicConverter
 
+# The first note bit is at position 3.
+INDEX_OF_FIRST_NOTE_BIT = 3
+# Part id is the last bit.
+INDEX_OF_PART_ID_BIT = -1
+
+# Precision for rounding roubles.
+PRECISION = 0.000000000000001
+BASIC_TICK_LENGTH = 6
+FIRST_PITCH_INDEX = 3
+DYNAMIC_BIT = 1
+ARTICULATION_BIT = 2
 
 def find_number_of_notes_in_tick(tick):
     """
@@ -26,31 +34,19 @@ def find_number_of_notes_in_tick(tick):
     :return: An integer representing the number of notes.
     """
 
-    # The first note bit is at position 3.
-    INDEX_OF_FIRST_NOTE_BIT = 3
-    # Part id is the last bit.
-    INDEX_OF_PART_ID_BIT = -1
-
     # Return all the bits describing pitches, and divide by 2 (each note uses 2 bits).
     # Remove all bit pairs with -1 from the count.
     return (len(tick[3:-1]) / 2) - (tick[3:-1].count(-1) / 2)
 
-def read_vmf_string(vmfString):
+def read_vmf_string(vmf_string):
     """
     Reads VMF data from a string to a Score Stream.
     """
-    
-    # Precision for rounding roubles.
-    PRECISION = 0.000000000000001
-    BASIC_TICK_LENGTH = 6
-    FIRST_PITCH_INDEX = 3
-    DYNAMIC_BIT = 1
-    ARTICULATION_BIT = 2
 
     parts_converted = {}
-    
-    vmf = json.loads(vmfString)
-    
+
+    vmf = json.loads(vmf_string)
+
     # create a score
     score = Score()
 
@@ -142,7 +138,8 @@ def read_vmf_string(vmfString):
                 else:
                     pitches = []
 
-                    # create the pitches. From the beginning to the end of the pitch section of the tick.
+                    # create the pitches.
+                    # From the beginning to the end of the pitch section of the tick.
                     for i in range(FIRST_PITCH_INDEX, FIRST_PITCH_INDEX + 2 * number_of_notes, 2):
                         pitch = Pitch(pitchClass=tick[i], octave=tick[i + 1])
                         pitches.append(pitch)
@@ -164,7 +161,7 @@ def read_vmf_string(vmfString):
                 # extend previous note
                 current_element.quarterLength += smallest_note
 
-            elif tick[0] == 0 and (type(current_element) is note.Note or current_element is None):
+            elif tick[0] == 0 and (isinstance(current_element, note.Note) or current_element is None):
                 if current_element is not None:
                     # check for precision and adjust
                     rounded = round(current_element.quarterLength)
@@ -180,7 +177,7 @@ def read_vmf_string(vmfString):
                 # Set the value for this tick.
                 current_element.quarterLength = smallest_note
 
-            elif tick[0] == 0 and type(current_element) is note.Rest:
+            elif tick[0] == 0 and isinstance(current_element, note.Rest):
                 # extend previous rest.
                 current_element.quarterLength += smallest_note
 
@@ -195,31 +192,31 @@ def read_vmf_string(vmfString):
             current_voice.append(current_element)
 
     # create the stream for time signature changes
-    ts_stream = Stream()
+    time_signature_stream = Stream()
 
-    for offset, ts_str in sorted(vmf['header']['time_signature'].items()):
-        ts = TimeSignature(ts_str)
-        ts_stream.append(ts)
-        ts_stream[-1].offset = float(offset)
+    for offset, time_signature_str in sorted(vmf['header']['time_signature'].items()):
+        time_signature = TimeSignature(time_signature_str)
+        time_signature_stream.append(time_signature)
+        time_signature_stream[-1].offset = float(offset)
 
     # finish up the file.
     for part in score.parts:
         for voice in part.voices:
-            voice.makeMeasures(inPlace=True, meterStream=ts_stream)
+            voice.makeMeasures(inPlace=True, meterStream=time_signature_stream)
 
     return score
 
-def read_vmf_file(vmfScore):
+def read_vmf_file(vmf_score):
     """
     Reads VMF to Score Stream.
     """
 
-    with open(vmfScore, 'r') as file:
+    with open(vmf_score, 'r') as file:
         file_contents = file.read()
-        
+
         return read_vmf_string(file_contents)
 
-def scan_score_for_shortest_duration(score):
+def scan_score_durations(score):
     """
     Scans the entire score for rhythmic analysis.
     This scan determines the smallest note value necessary to accurately
@@ -248,17 +245,15 @@ def scan_score_for_largest_chord(score):
     :rtype: int
     :return: An integer denoting the size of the largest chord.
     """
-    # Flatten the score into one stream and extract the notes.
-    notes = score.flat.notes
 
     # Flatten the score into one stream and extract the chords.
-    chords = [element for element in score.flat.notes.elements if type(element) is chord.Chord]
+    chords = [element for element in score.flat.notes.elements if isinstance(element, chord.Chord)]
 
     largest_size = 0
 
     # Find the largest chord size.
-    for c in chords:
-        largest_size = max(c.multisetCardinality, largest_size)
+    for current_chord in chords:
+        largest_size = max(current_chord.multisetCardinality, largest_size)
 
     return largest_size
 
@@ -275,15 +270,16 @@ def convert_voices_to_parts(score, id_map):
     for i in range(len(score.parts)):
         part = score.parts[i]
 
-        if len(list(filter(lambda m: issubclass(type(m), Stream) and m.hasVoices(), part.elements))) > 0:
+        # OLD: list(filter(lambda m: issubclass(type(m), Stream) and m.hasVoices(), part.elements))
+        if len([m for m in part.elements if issubclass(type(m), Stream) and m.hasVoices()]) > 0:
             # break the voices into parts.
             exploded_stream = part.explode()
 
             # assign the part id to all exploded parts.
             # and add the exploded parts to the original stream. Mark where to insert the parts.
-            for s in exploded_stream.parts:
+            for current_stream in exploded_stream.parts:
                 # all related parts share the same id.
-                id_map[s.id] = next_part_id
+                id_map[current_stream.id] = next_part_id
                 parts_to_insert[i] = exploded_stream.parts
         else:
             # Just record the id.
@@ -297,8 +293,8 @@ def convert_voices_to_parts(score, id_map):
     # recorded indices are obsolete.
     for i in sorted(parts_to_insert, reverse=True):
         # Reverse insertion order so that ordering is properly preserved.
-        for p in reversed(parts_to_insert[i].elements):
-            new_parts.insert(i + 1, p)
+        for current_part in reversed(parts_to_insert[i].elements):
+            new_parts.insert(i + 1, current_part)
 
         # Remove the exploded part.
         new_parts.pop(i)
@@ -319,8 +315,8 @@ def scan_score_for_number_of_voices(score):
 
     for part in score.parts:
         voices_in_part = 0
-        for m in part.getElementsByClass(stream.Measure):
-            voices_in_measure = len(m.voices)
+        for current_measure in part.getElementsByClass(stream.Measure):
+            voices_in_measure = len(current_measure.voices)
 
             # If there is only 1 voice, then we have 0 voice objects.
             if voices_in_measure == 0:
@@ -345,7 +341,7 @@ def convert_score_to_vmf(score):
     id_map = {}
 
     # The smallest duration covered. Expressed as a percentage of a quarter note.
-    smallest_note = scan_score_for_shortest_duration(score)
+    smallest_note = scan_score_durations(score)
 
     # The number of notes in largest chord in the file.
     largest_chord = scan_score_for_largest_chord(score)
@@ -362,7 +358,7 @@ def convert_score_to_vmf(score):
     for part in score.parts:
         pitches = []
         for element in part.flat:
-            if type(element) is note.Note:
+            if isinstance(element, note.Note):
 
                 n_frames = element.duration.quarterLength / smallest_note
 
@@ -400,7 +396,7 @@ def convert_score_to_vmf(score):
                         # Add the part id
                         pitches[-1].append(id_map[part.id])
 
-            elif type(element) is chord.Chord:
+            elif isinstance(element, chord.Chord):
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range(int(n_frames)):
@@ -466,7 +462,7 @@ def convert_score_to_vmf(score):
 
                         pitches.append(current_chord)
 
-            elif type(element) is note.Rest:
+            elif isinstance(element, note.Rest):
                 n_frames = element.duration.quarterLength / smallest_note
 
                 for i in range(int(n_frames)):
@@ -485,7 +481,8 @@ def convert_score_to_vmf(score):
     vmf_file = {u'header': {}, u'body': [list(tick) for tick in zip(*parts)]}
 
     # Prepare the header.
-    # Get a string of the fraction representation. Limiting the denominator to get clean values (ie 1/3). The
+    # Get a string of the fraction representation.
+    # Limiting the denominator to get clean values (ie 1/3). The
     # limit of 64 ends up being a 256th note which is never really used.
     vmf_file['header']['tick_value'] = str(Fraction(smallest_note).limit_denominator(64))
     vmf_file['header']['number_of_voices'] = scan_score_for_number_of_voices(score)
@@ -503,20 +500,3 @@ def convert_score_to_vmf(score):
         vmf_file['header']['key_signature'][str(key_signature.offset)] = key_signature.sharps
 
     return vmf_file
-
-def run():
-    """
-    Converts to and from vmf into MIDI.
-    """
-    pass
-    # if source_format == '.vmf':
-    #     score = read_vmf(args.input_file)
-    #     score.write('midi', 'output.mid')
-    # elif source_format == '.mid':
-    #     vmf = convert_score_to_vmf(converter.parse(args.input_file))
-    #     vmfJSON = json.dumps(vmf)
-    #     file = open('output.vmf', 'w')
-    #     file.write(vmfJSON)
-    #     file.close()
-    # else:
-    #     print('Please provide either an vmf or midi file as your input.')
