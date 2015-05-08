@@ -1,6 +1,6 @@
 import unittest
 from nose.tools import raises
-from vmf_converter_core.dynamic_converter import DynamicConverter
+from vmf_converter.core.dynamic_converter import DynamicConverter
 
 
 class DynamicConverterTest(unittest.TestCase):

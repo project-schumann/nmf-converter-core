@@ -1,6 +1,6 @@
 import unittest
 from music21.articulations import Staccato, Staccatissimo, StrongAccent, Accent, Tenuto
-from vmf_converter_core.articulation_converter import ArticulationConverter
+from vmf_converter.core.articulation_converter import ArticulationConverter
 
 
 class ArticulationConverterTest(unittest.TestCase):

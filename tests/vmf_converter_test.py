@@ -6,38 +6,10 @@ from music21 import duration
 from music21.chord import Chord
 from music21.meter import TimeSignature
 from music21.note import Note, Rest
-from vmf_converter_core import vmf_converter
+from vmf_converter.core import vmf_converter_core
 
 class vmfConverterTest(unittest.TestCase):
-    """Test Class for vmf_converter module"""
-
-    def test_parse_cl_args_no_output_001(self):
-        """
-        Tests the commandline parser.
-        No output file is specified.
-        """
-        args = vmf_converter.parse_cl_args(['input.mid'])
-
-        assert args.input_file == 'input.mid'
-        assert args.output_file is None
-
-    def test_parse_cl_args_with_output_001(self):
-        """
-        Tests the commandline parser.
-        An output file is specified.
-        """
-        args = vmf_converter.parse_cl_args(['input.mid', 'output.vmf'])
-
-        assert args.input_file == 'input.mid'
-        assert args.output_file == 'output.vmf'
-
-    def test_determine_source_format_001(self):
-        """
-        Tests the extraction of file extensions.
-        """
-        file_extension = vmf_converter.determine_source_format('/foo/bar/myFile.vmf')
-
-        assert file_extension == '.vmf'
+    """Test Class for vmf_converter_core module"""
 
     def test_convert_score_to_vmf_001(self):
         """
@@ -46,7 +18,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/simple.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/simple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -61,7 +33,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/ties.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/ties.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -76,7 +48,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/triplets.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/triplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -91,7 +63,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/duplets.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/duplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -106,7 +78,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/quintuplets.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/quintuplets.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -121,7 +93,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/SimpleToSimple.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/SimpleToSimple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -136,7 +108,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/CompoundToCompound.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/CompoundToCompound.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -151,7 +123,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/SimpleToCompound.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/SimpleToCompound.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -166,7 +138,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/CompoundToSimple.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/CompoundToSimple.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -181,7 +153,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/chords.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/chords.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -196,7 +168,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/voices.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/voices.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -211,7 +183,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/dynamics.mid')
         first_phrase = score.measures(0, 5)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/dynamics.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -226,7 +198,7 @@ class vmfConverterTest(unittest.TestCase):
         score = converter.parse('./tests/fixtures/dottedQuarter.mid')
         first_phrase = score.measures(0, 2)
 
-        actual = vmf_converter.convert_score_to_vmf(first_phrase)
+        actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
 
         with open('./tests/expected/dottedQuarter.vmf', 'r') as expected_file:
             expected_json = expected_file.read()
@@ -240,7 +212,7 @@ class vmfConverterTest(unittest.TestCase):
         smallest necessary note value to accurately encode the score as a vmf.
         """
         score = converter.parse('./tests/fixtures/aus_meines_herz.mid')
-        shortest_duration = vmf_converter.scan_score_for_shortest_duration(score)
+        shortest_duration = vmf_converter_core.scan_score_for_shortest_duration(score)
 
         assert shortest_duration == duration.convertTypeToQuarterLength('eighth')
 
@@ -251,7 +223,7 @@ class vmfConverterTest(unittest.TestCase):
         """
 
         score = converter.parse('./tests/fixtures/chords.mid')
-        largest_chord_size = vmf_converter.scan_score_for_largest_chord(score)
+        largest_chord_size = vmf_converter_core.scan_score_for_largest_chord(score)
 
         assert largest_chord_size == 3
 
@@ -263,7 +235,7 @@ class vmfConverterTest(unittest.TestCase):
 
         score = converter.parse('./tests/fixtures/voices.mid')
         first_phrase = score.measures(0, 2)
-        number_of_parts = vmf_converter.scan_score_for_number_of_voices(first_phrase)
+        number_of_parts = vmf_converter_core.scan_score_for_number_of_voices(first_phrase)
 
         assert number_of_parts == 3
 
@@ -271,7 +243,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a simple vmf file to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/simple.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/simple.vmf')
         actual_score.write('midi', './tests/output/simple.mid')
         expected_score = converter.parse('./tests/fixtures/simple.mid')
 
@@ -292,7 +264,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with ties to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/ties.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/ties.vmf')
         actual_score.write('midi', './tests/output/ties.mid')
         expected_score = converter.parse('./tests/fixtures/ties.mid')
 
@@ -313,7 +285,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with rhythmic dots to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/dottedQuarter.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/dottedQuarter.vmf')
         actual_score.write('midi', './tests/output/dottedQuarter.mid')
         expected_score = converter.parse('./tests/fixtures/dottedQuarter.mid')
 
@@ -334,7 +306,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with triplets to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/triplets.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/triplets.vmf')
         actual_score.write('midi', './tests/output/triplets.mid')
         expected_score = converter.parse('./tests/fixtures/triplets.mid')
 
@@ -355,7 +327,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with duplets to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/duplets.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/duplets.vmf')
         actual_score.write('midi', './tests/output/duplets.mid')
         expected_score = converter.parse('./tests/fixtures/duplets.mid')
 
@@ -376,7 +348,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with a simple to simple meter change to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/SimpleToSimple.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/SimpleToSimple.vmf')
         actual_score.write('midi', './tests/output/SimpleToSimple.mid')
         expected_score = converter.parse('./tests/fixtures/SimpleToSimple.mid')
 
@@ -408,7 +380,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with a compound to compound meter change to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/CompoundToCompound.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/CompoundToCompound.vmf')
         actual_score.write('midi', './tests/output/CompoundToCompound.mid')
         expected_score = converter.parse('./tests/fixtures/CompoundToCompound.mid')
 
@@ -440,7 +412,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with a simple to compound meter change to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/SimpleToCompound.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/SimpleToCompound.vmf')
         actual_score.write('midi', './tests/output/SimpleToCompound.mid')
         expected_score = converter.parse('./tests/fixtures/SimpleToCompound.mid')
 
@@ -472,7 +444,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with a compound to simple meter change to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/CompoundToSimple.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/CompoundToSimple.vmf')
         actual_score.write('midi', './tests/output/CompoundToSimple.mid')
         expected_score = converter.parse('./tests/fixtures/CompoundToSimple.mid')
 
@@ -504,7 +476,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with chords to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/chords.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/chords.vmf')
         actual_score.write('midi', './tests/output/chords.mid')
         expected_score = converter.parse('./tests/fixtures/chords.mid')
 
@@ -542,7 +514,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with multiple voices to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/voices.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/voices.vmf')
         actual_score.write('midi', './tests/output/voices.mid')
         expected_score = converter.parse('./tests/fixtures/voices.mid')
 
@@ -569,7 +541,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a vmf file with dynamics to a midi file.
         """
-        actual_score = vmf_converter.read_vmf('./tests/expected/dynamics.vmf')
+        actual_score = vmf_converter_core.read_vmf_file('./tests/expected/dynamics.vmf')
         actual_score.write('midi', './tests/output/dynamics.mid')
         expected_score = converter.parse('./tests/fixtures/dynamics.mid')
 
@@ -600,7 +572,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         tick = [1,-1,0,0,4,-1,-1,-1,-1,0]
 
-        number_of_notes = vmf_converter.find_number_of_notes_in_tick(tick)
+        number_of_notes = vmf_converter_core.find_number_of_notes_in_tick(tick)
 
         assert number_of_notes == 1
 
@@ -610,6 +582,6 @@ class vmfConverterTest(unittest.TestCase):
         """
         tick = [1,-1,0,0,4,0,0,-1,-1,0]
 
-        number_of_notes = vmf_converter.find_number_of_notes_in_tick(tick)
+        number_of_notes = vmf_converter_core.find_number_of_notes_in_tick(tick)
 
         assert number_of_notes == 2
