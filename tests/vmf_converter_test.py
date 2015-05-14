@@ -1,3 +1,4 @@
+import os
 import unittest
 import json
 
@@ -244,7 +245,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a simple vmf file to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/simple.vmf')
-        actual_score.write('midi', './tests/output/simple.mid')
         expected_score = converter.parse('./tests/fixtures/simple.mid')
 
         # Assert that the file has the right number of parts.
@@ -265,7 +265,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with ties to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/ties.vmf')
-        actual_score.write('midi', './tests/output/ties.mid')
         expected_score = converter.parse('./tests/fixtures/ties.mid')
 
         # Assert that the file has the right number of parts.
@@ -286,7 +285,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with rhythmic dots to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/dottedQuarter.vmf')
-        actual_score.write('midi', './tests/output/dottedQuarter.mid')
         expected_score = converter.parse('./tests/fixtures/dottedQuarter.mid')
 
         # Assert that the file has the right number of parts.
@@ -307,7 +305,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with triplets to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/triplets.vmf')
-        actual_score.write('midi', './tests/output/triplets.mid')
         expected_score = converter.parse('./tests/fixtures/triplets.mid')
 
         # Assert that the file has the right number of parts.
@@ -328,7 +325,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with duplets to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/duplets.vmf')
-        actual_score.write('midi', './tests/output/duplets.mid')
         expected_score = converter.parse('./tests/fixtures/duplets.mid')
 
         # Assert that the file has the right number of parts.
@@ -349,7 +345,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with a simple to simple meter change to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/SimpleToSimple.vmf')
-        actual_score.write('midi', './tests/output/SimpleToSimple.mid')
         expected_score = converter.parse('./tests/fixtures/SimpleToSimple.mid')
 
         # Assert that the file has the right number of parts.
@@ -381,7 +376,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with a compound to compound meter change to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/CompoundToCompound.vmf')
-        actual_score.write('midi', './tests/output/CompoundToCompound.mid')
         expected_score = converter.parse('./tests/fixtures/CompoundToCompound.mid')
 
         # Assert that the file has the right number of parts.
@@ -413,7 +407,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with a simple to compound meter change to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/SimpleToCompound.vmf')
-        actual_score.write('midi', './tests/output/SimpleToCompound.mid')
         expected_score = converter.parse('./tests/fixtures/SimpleToCompound.mid')
 
         # Assert that the file has the right number of parts.
@@ -445,7 +438,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with a compound to simple meter change to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/CompoundToSimple.vmf')
-        actual_score.write('midi', './tests/output/CompoundToSimple.mid')
         expected_score = converter.parse('./tests/fixtures/CompoundToSimple.mid')
 
         # Assert that the file has the right number of parts.
@@ -477,7 +469,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with chords to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/chords.vmf')
-        actual_score.write('midi', './tests/output/chords.mid')
         expected_score = converter.parse('./tests/fixtures/chords.mid')
 
         # Assert that the file has the right number of parts.
@@ -515,7 +506,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with multiple voices to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/voices.vmf')
-        actual_score.write('midi', './tests/output/voices.mid')
         expected_score = converter.parse('./tests/fixtures/voices.mid')
 
         # Assert that the file has the right number of parts.
@@ -542,7 +532,6 @@ class vmfConverterTest(unittest.TestCase):
         Tests the conversion of a vmf file with dynamics to a midi file.
         """
         actual_score = vmf_converter_core.read_vmf_file('./tests/expected/dynamics.vmf')
-        actual_score.write('midi', './tests/output/dynamics.mid')
         expected_score = converter.parse('./tests/fixtures/dynamics.mid')
 
         # Assert that the file has the right number of parts.
