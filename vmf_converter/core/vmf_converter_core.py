@@ -2,8 +2,7 @@
 from fractions import Fraction
 import json
 
-from music21 import note, chord, stream, meter, key
-
+from music21 import note, chord, stream, meter, key, tempo
 from music21.chord import Chord
 from music21.common import approximateGCD
 from music21.key import KeySignature
@@ -11,9 +10,11 @@ from music21.meter import TimeSignature
 from music21.note import Note, Rest
 from music21.pitch import Pitch
 from music21.stream import Score, Part, Stream, Voice
-from vmf_converter.core.articulation_converter import ArticulationConverter
 
+from vmf_converter.core.articulation_converter import ArticulationConverter
 from vmf_converter.core.dynamic_converter import DynamicConverter
+
+
 
 # The first note bit is at position 3.
 INDEX_OF_FIRST_NOTE_BIT = 3
@@ -59,19 +60,6 @@ def read_vmf_string(vmf_string):
     for voice_number in range(number_of_parts):
         part = Part()
         voice = Voice()
-
-        # we need new instances each time.
-        try:
-            initial_key_signature = KeySignature(vmf['header']['key_signature']['0.0'])
-        except KeyError:
-            # Key Signatures aren't mandatory. Default to C major
-            initial_key_signature = KeySignature(0)
-
-        initial_time_signature = TimeSignature(vmf['header']['time_signature']['0.0'])
-
-
-        voice.append(initial_key_signature)
-        voice.append(initial_time_signature)
 
         part.append(voice)
 
@@ -204,6 +192,13 @@ def read_vmf_string(vmf_string):
         for voice in part.voices:
             voice.makeMeasures(inPlace=True, meterStream=time_signature_stream)
 
+        for offset, t in sorted(vmf['header']['tempo'].items()):
+            mm = tempo.MetronomeMark(number=t, referent=note.Note(type='quarter'))
+            voice.insert(offset, mm)
+
+        for offset, ks in sorted(vmf['header']['key_signature'].items()):
+            voice.insert(offset, KeySignature(ks))
+
     return score
 
 def read_vmf_file(vmf_score):
@@ -326,7 +321,6 @@ def scan_score_for_number_of_voices(score):
         number_of_parts += voices_in_part
 
     return number_of_parts
-
 
 def convert_score_to_vmf(score):
     """
@@ -487,6 +481,7 @@ def convert_score_to_vmf(score):
     vmf_file['header']['tick_value'] = str(Fraction(smallest_note).limit_denominator(64))
     vmf_file['header']['number_of_voices'] = scan_score_for_number_of_voices(score)
     vmf_file['header']['number_of_parts'] = number_of_parts
+
     vmf_file['header']['time_signature'] = {}
 
     # Get the time signatures.
@@ -498,5 +493,10 @@ def convert_score_to_vmf(score):
     # Get the key signatures
     for key_signature in score.flat.getElementsByClass(key.KeySignature):
         vmf_file['header']['key_signature'][str(key_signature.offset)] = key_signature.sharps
+
+    vmf_file['header']['tempo'] = {}
+
+    for t in score.flat.getElementsByClass(tempo.MetronomeMark):
+        vmf_file['header']['tempo'][str(t.offset)] = t.getQuarterBPM()
 
     return vmf_file
