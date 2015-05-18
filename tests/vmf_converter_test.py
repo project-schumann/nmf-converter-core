@@ -765,6 +765,27 @@ class vmfConverterTest(unittest.TestCase):
                 elif type(expected_element) is Rest:
                     assert expected_element.quarterLength == actual_element.quarterLength
 
+    def test_read_vmf_string_004(self):
+        """
+        Tests reading a VMF file with a quintuplet.
+        """
+        actual_score = vmf_converter_core.read_vmf_file('./expected/quintuplets.vmf')
+        expected_score = converter.parse('./fixtures/quintuplets.xml')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements,
+                                                        actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
     def test_find_number_of_notes_in_tick_001(self):
         """
         Tests finding the number of notes in a tick
