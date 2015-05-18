@@ -79,7 +79,7 @@ class vmfConverterTest(unittest.TestCase):
         """
         Tests the conversion of a score stream with quintuplets to a vmf data structure.
         """
-        score = converter.parse('./fixtures/quintuplets.mid')
+        score = converter.parse('./fixtures/quintuplets.xml')
         first_phrase = score.measures(0, 2)
 
         actual = vmf_converter_core.convert_score_to_vmf(first_phrase)
