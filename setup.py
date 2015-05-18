@@ -1,16 +1,16 @@
 from setuptools import setup
 
 setup(
-  name = 'vmf_converter_core',
+  name='vmf-converter',
   packages = [],
-  version = '0.1.0',
-  description = 'VMF/MIDI Converter.',
+  version='0.0.1',
+  description='VMF Converter for Music21',
   long_description = open('README.rst', 'r').read(),
   author = 'Patrick Ayoup',
   author_email = 'patrick.ayoup@gmail.com',
   license = 'MIT',
-  url = 'https://github.com/project-schumann/vmf_converter_core/',
-  download_url = 'https://github.com/project-schumann/vmf_converter_core/tarball/0.1.0',
+  url='https://github.com/project-schumann/vmf-converter/',
+  download_url='https://github.com/project-schumann/vmf-converter/tarball/0.0.1',
   keywords = ['music', 'vector', 'notation'],
   classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -20,7 +20,7 @@ setup(
     'Natural Language :: English',
     'Operating System :: OS Independent',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 3.4',
     'Topic :: Utilities'
   ]
 )

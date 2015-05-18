@@ -1,9 +1,0 @@
-{
-  header: {
-    "key": "value"
-  },
-  body: [
-    [[x, y], [x, y]],
-    [[x, y], [x, y]],
-  ]
-}
