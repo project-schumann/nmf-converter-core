@@ -3,8 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to vmf_converter's documentation!
+vmf-converter
 =========================================
+
+A music21 converter for the VMF file format.
 
 Contents:
 
@@ -12,12 +14,3 @@ Contents:
    :maxdepth: 10
 
    vmf_converter
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
