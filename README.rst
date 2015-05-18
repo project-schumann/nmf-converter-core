@@ -65,8 +65,8 @@ With the virtualenv activated, navigate to the project root and run::
 
 This will install the dependencies of this project.
 
-Using the converter
-~~~~~~~~~~~~~~~~~~~
+Usage
+-----
 
 To use this converter, first it must be registered with music21.
 The following example shows parsing and writing a file.
