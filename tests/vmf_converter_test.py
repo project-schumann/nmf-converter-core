@@ -238,6 +238,33 @@ class vmfConverterTest(unittest.TestCase):
 
             assert expected == actual
 
+    def test_convert_score_to_vmf_016(self):
+        """
+        Tests an explicit anacrusis.
+        """
+        score = converter.parse('./fixtures/anacrusis2.xml')
+
+        actual = vmf_converter_core.convert_score_to_vmf(score)
+
+        with open('./expected/anacrusis.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+
+            assert expected == actual
+
+    def test_convert_score_to_vmf_017(self):
+        """
+        Tests the conversion of a score stream with chords and sustained notes..
+        """
+        score = converter.parse('./fixtures/chordsAndSustain.xml')
+
+        actual = vmf_converter_core.convert_score_to_vmf(score)
+
+        with open('./expected/chordsAndSustain.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+
+            assert expected == actual
 
     def test_scan_score_durations_001(self):
         """

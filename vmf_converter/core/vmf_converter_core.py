@@ -17,6 +17,7 @@ from vmf_converter.core.dynamic_converter import DynamicConverter
 
 
 
+
 # The first note bit is at position 3.
 INDEX_OF_FIRST_NOTE_BIT = 3
 # Part id is the last bit.
@@ -251,7 +252,8 @@ def scan_score_for_largest_chord(score):
     for current_chord in chords:
         largest_size = max(current_chord.multisetCardinality, largest_size)
 
-    return largest_size
+    # If there are no chords, largest size comes out as 0.
+    return max(largest_size, 1)
 
 
 def convert_voices_to_parts(score, id_map):
@@ -278,6 +280,10 @@ def convert_voices_to_parts(score, id_map):
                 id_map[current_stream.id] = next_part_id
                 parts_to_insert[i] = exploded_stream.parts
         else:
+            # some sequencers don't add a part id..
+            if part.id == "":
+                part.id = next_part_id
+
             # Just record the id.
             id_map[part.id] = next_part_id
 
@@ -370,7 +376,7 @@ def convert_score_to_vmf(score):
                 pitches.append([0, 0, 0])
 
                 # Pad remaining note positions:
-                for i in range(largest_chord - 1):
+                for i in range(largest_chord):
                     pitches[-1].append(0)
                     pitches[-1].append(0)
 
