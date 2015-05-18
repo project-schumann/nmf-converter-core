@@ -1,5 +1,8 @@
 import unittest
-from music21.articulations import Staccato, Staccatissimo, StrongAccent, Accent, Tenuto
+
+from music21.articulations import Staccato, Staccatissimo, StrongAccent, Accent, Tenuto, Plop
+from nose.tools import raises
+
 from vmf_converter.core.articulation_converter import ArticulationConverter
 
 
@@ -36,6 +39,13 @@ class ArticulationConverterTest(unittest.TestCase):
         """
         assert ArticulationConverter.articulation_to_vmf(Tenuto()) == 7
 
+    @raises(ValueError)
+    def test_articulation_to_vmf_006(self):
+        """
+        Tests the Articulation to VMF conversion for unsupported articulation.
+        """
+        ArticulationConverter.articulation_to_vmf(Plop())
+
     def test_vmf_to_articulation_001(self):
         """
         Tests the VMF to Articulation conversion for staccato articulation.
@@ -65,3 +75,16 @@ class ArticulationConverterTest(unittest.TestCase):
         Tests the VMF to Articulation conversion for Tenuto articulation.
         """
         assert type(ArticulationConverter.vmf_to_articulation(7)) == Tenuto
+
+    def test_vmf_to_articulation_006(self):
+        """
+        Tests the VMF to Articulation conversion for no articulation.
+        """
+        assert ArticulationConverter.vmf_to_articulation(0) is None
+
+    @raises(ValueError)
+    def test_vmf_to_articulation_007(self):
+        """
+        Tests the VMF to Articulation conversion for unsupported articulation.
+        """
+        ArticulationConverter.vmf_to_articulation(20)
