@@ -1,3 +1,4 @@
 # music21 2.0.4 This version or later is necessary but not yet on PyPi.
 https://github.com/cuthbertLab/music21/archive/master.zip
 nose==1.3.4
+coverage==3.7.1
