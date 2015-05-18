@@ -88,6 +88,8 @@ The following example shows parsing and writing a file.
 Because this converter is built on music21, it can parse music21 files into a music21 stream
 and it can also write a music21 stream back to a vmf file.
 
+API documentation is found at `ReadTheDocs <http://vmf-converter.readthedocs.org/>`_
+
 Testing
 -------
 
