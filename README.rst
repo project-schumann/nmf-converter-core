@@ -87,3 +87,14 @@ The following example shows parsing and writing a file.
 
 Because this converter is built on music21, it can parse music21 files into a music21 stream
 and it can also write a music21 stream back to a vmf file.
+
+Testing
+-------
+
+To run the tests, ``nosetests`` is used from the project root::
+
+    $ nosetests -w tests
+
+To run the tests and generate a code coverage report::
+
+    $ nosetests --with-coverage --cover-html --cover-html-dir=../cover -w tests
