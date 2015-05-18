@@ -266,6 +266,20 @@ class vmfConverterTest(unittest.TestCase):
 
             assert expected == actual
 
+    def test_convert_score_to_vmf_018(self):
+        """
+        Tests the conversion of a score stream with syncopated chords..
+        """
+        score = converter.parse('./fixtures/syncopated.xml')
+
+        actual = vmf_converter_core.convert_score_to_vmf(score)
+
+        with open('./expected/syncopated.vmf', 'r') as expected_file:
+            expected_json = expected_file.read()
+            expected = json.loads(expected_json)
+
+            assert expected == actual
+
     def test_scan_score_durations_001(self):
         """
         Tests the scanning function which pre-analyzes the score to determine the
