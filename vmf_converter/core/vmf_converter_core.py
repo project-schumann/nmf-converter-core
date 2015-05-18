@@ -14,10 +14,6 @@ from music21.stream import Score, Part, Stream, Voice
 from vmf_converter.core.articulation_converter import ArticulationConverter
 from vmf_converter.core.dynamic_converter import DynamicConverter
 
-
-
-
-
 # The first note bit is at position 3.
 INDEX_OF_FIRST_NOTE_BIT = 3
 # Part id is the last bit.
@@ -33,6 +29,7 @@ ARTICULATION_BIT = 2
 def find_number_of_notes_in_tick(tick):
     """
     Finds the number of notes in a tick.
+
     :param tick: The tick to evaluate.
     :return: An integer representing the number of notes.
     """
@@ -44,6 +41,9 @@ def find_number_of_notes_in_tick(tick):
 def read_vmf_string(vmf_string):
     """
     Reads VMF data from a string to a Score Stream.
+
+    :param vmf_string: The contents of the VMF file as a string.
+    :return: A music21 score instance containing the music in the VMF file.
     """
 
     parts_converted = {}
@@ -206,6 +206,9 @@ def read_vmf_string(vmf_string):
 def read_vmf_file(vmf_score):
     """
     Reads VMF to Score Stream.
+
+    :param vmf_score: The path of the VMF file to read.
+    :return: A music21 score instance containing the music in the VMF file.
     """
 
     with open(vmf_score, 'r') as file:
@@ -218,9 +221,8 @@ def scan_score_durations(score):
     Scans the entire score for rhythmic analysis.
     This scan determines the smallest note value necessary to accurately
     encode the score in vmf.
-    :type score: Score
+
     :param score: The input score stream to analyze.
-    :rtype int
     :return: An integer denoting the smallest fraction of a quarter note
     necessary to accurately encode the score in vmf.
     """
@@ -238,8 +240,8 @@ def scan_score_for_largest_chord(score):
     """
     Scans the entire score for the largest chord.
     This determines how many notes entries should be available in a tick.
-    :param score: Score
-    :rtype: int
+
+    :param score: The music21 score to scan.
     :return: An integer denoting the size of the largest chord.
     """
 
@@ -259,7 +261,8 @@ def scan_score_for_largest_chord(score):
 def convert_voices_to_parts(score, id_map):
     """
     Removes polyphonic voices and replaces them with part representations of its voices.
-    :param score: Score
+
+    :param score: The music21 score to scan.
     :param id_map: A mapping of music21 ids to vmf part ids.
     """
     parts_to_insert = {}
@@ -308,8 +311,8 @@ def convert_voices_to_parts(score, id_map):
 def scan_score_for_number_of_voices(score):
     """
     Scans the entire score to determine how many voices there are.
-    :param score: Score
-    :rtype: int
+
+    :param score: The music21 score to scan.
     :return: The number of parts in the score.
     """
 
@@ -332,10 +335,9 @@ def scan_score_for_number_of_voices(score):
 def convert_score_to_vmf(score):
     """
     Converts a MIDI file to an vmf file.
-    :type score: Score
-    :param score: The input score stream to convert.
-    :rtype: list
-    :return: A list of tuples representing the music contained in the MIDI file.
+
+    :param score: The music21 score to convert to VMF.
+    :return: A dictionary containing the VMF data structure.
     """
 
     # Mapping of music21 id to vmf ids

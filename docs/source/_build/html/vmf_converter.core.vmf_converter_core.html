@@ -1,0 +1,253 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>vmf_converter.core.vmf_converter_core module &mdash; vmf-converter 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="vmf-converter 0.0.1 documentation" href="index.html" />
+    <link rel="up" title="vmf_converter.core package" href="vmf_converter.core.html" />
+    <link rel="next" title="vmf_converter.vmf_converter module" href="vmf_converter.vmf_converter.html" />
+    <link rel="prev" title="vmf_converter.core.dynamic_converter module" href="vmf_converter.core.dynamic_converter.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vmf_converter.vmf_converter.html" title="vmf_converter.vmf_converter module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="vmf_converter.core.dynamic_converter.html" title="vmf_converter.core.dynamic_converter module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">vmf-converter 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="vmf_converter.html" >vmf_converter package</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="vmf_converter.core.html" accesskey="U">vmf_converter.core package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vmf_converter.core.vmf_converter_core">
+<span id="vmf-converter-core-vmf-converter-core-module"></span><h1>vmf_converter.core.vmf_converter_core module<a class="headerlink" href="#module-vmf_converter.core.vmf_converter_core" title="Permalink to this headline">¶</a></h1>
+<p>Main logic for parsing a VMF file.</p>
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.convert_score_to_vmf">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">convert_score_to_vmf</code><span class="sig-paren">(</span><em>score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#convert_score_to_vmf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.convert_score_to_vmf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a MIDI file to an vmf file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>score</strong> &#8211; The music21 score to convert to VMF.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary containing the VMF data structure.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.convert_voices_to_parts">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">convert_voices_to_parts</code><span class="sig-paren">(</span><em>score</em>, <em>id_map</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#convert_voices_to_parts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.convert_voices_to_parts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes polyphonic voices and replaces them with part representations of its voices.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>score</strong> &#8211; The music21 score to scan.</li>
+<li><strong>id_map</strong> &#8211; A mapping of music21 ids to vmf part ids.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.find_number_of_notes_in_tick">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">find_number_of_notes_in_tick</code><span class="sig-paren">(</span><em>tick</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#find_number_of_notes_in_tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.find_number_of_notes_in_tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the number of notes in a tick.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tick</strong> &#8211; The tick to evaluate.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integer representing the number of notes.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.read_vmf_file">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">read_vmf_file</code><span class="sig-paren">(</span><em>vmf_score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#read_vmf_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.read_vmf_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads VMF to Score Stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>vmf_score</strong> &#8211; The path of the VMF file to read.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A music21 score instance containing the music in the VMF file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.read_vmf_string">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">read_vmf_string</code><span class="sig-paren">(</span><em>vmf_string</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#read_vmf_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.read_vmf_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads VMF data from a string to a Score Stream.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>vmf_string</strong> &#8211; The contents of the VMF file as a string.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A music21 score instance containing the music in the VMF file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.scan_score_durations">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">scan_score_durations</code><span class="sig-paren">(</span><em>score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#scan_score_durations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.scan_score_durations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the entire score for rhythmic analysis.
+This scan determines the smallest note value necessary to accurately
+encode the score in vmf.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>score</strong> &#8211; The input score stream to analyze.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integer denoting the smallest fraction of a quarter note</td>
+</tr>
+</tbody>
+</table>
+<p>necessary to accurately encode the score in vmf.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.scan_score_for_largest_chord">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">scan_score_for_largest_chord</code><span class="sig-paren">(</span><em>score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#scan_score_for_largest_chord"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.scan_score_for_largest_chord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the entire score for the largest chord.
+This determines how many notes entries should be available in a tick.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>score</strong> &#8211; The music21 score to scan.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integer denoting the size of the largest chord.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vmf_converter.core.vmf_converter_core.scan_score_for_number_of_voices">
+<code class="descclassname">vmf_converter.core.vmf_converter_core.</code><code class="descname">scan_score_for_number_of_voices</code><span class="sig-paren">(</span><em>score</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/core/vmf_converter_core.html#scan_score_for_number_of_voices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.core.vmf_converter_core.scan_score_for_number_of_voices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scans the entire score to determine how many voices there are.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>score</strong> &#8211; The music21 score to scan.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The number of parts in the score.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vmf_converter.core.dynamic_converter.html"
+                        title="previous chapter">vmf_converter.core.dynamic_converter module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="vmf_converter.vmf_converter.html"
+                        title="next chapter">vmf_converter.vmf_converter module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/vmf_converter.core.vmf_converter_core.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Patrick Ayoup.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="_sources/vmf_converter.core.vmf_converter_core.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

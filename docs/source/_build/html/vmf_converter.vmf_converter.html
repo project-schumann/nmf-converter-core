@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>vmf_converter.vmf_converter module &mdash; vmf-converter 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="vmf-converter 0.0.1 documentation" href="index.html" />
+    <link rel="up" title="vmf_converter package" href="vmf_converter.html" />
+    <link rel="prev" title="vmf_converter.core.vmf_converter_core module" href="vmf_converter.core.vmf_converter_core.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="vmf_converter.core.vmf_converter_core.html" title="vmf_converter.core.vmf_converter_core module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">vmf-converter 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="vmf_converter.html" accesskey="U">vmf_converter package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-vmf_converter.vmf_converter">
+<span id="vmf-converter-vmf-converter-module"></span><h1>vmf_converter.vmf_converter module<a class="headerlink" href="#module-vmf_converter.vmf_converter" title="Permalink to this headline">¶</a></h1>
+<p>Bi-directional converter for the vector music format (VMF).</p>
+<dl class="class">
+<dt id="vmf_converter.vmf_converter.VMFConverter">
+<em class="property">class </em><code class="descclassname">vmf_converter.vmf_converter.</code><code class="descname">VMFConverter</code><a class="reference internal" href="_modules/vmf_converter/vmf_converter.html#VMFConverter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">music21.converter.subConverters.SubConverter</span></code></p>
+<p>Converter for parsing and writing VMF files.</p>
+<dl class="method">
+<dt id="vmf_converter.vmf_converter.VMFConverter.parseData">
+<code class="descname">parseData</code><span class="sig-paren">(</span><em>strData</em>, <em>number=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/vmf_converter.html#VMFConverter.parseData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.parseData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a string containing VMF data into a music21 stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="vmf_converter.vmf_converter.VMFConverter.parseFile">
+<code class="descname">parseFile</code><span class="sig-paren">(</span><em>filePath</em>, <em>number=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/vmf_converter.html#VMFConverter.parseFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.parseFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a file containing VMF data into a music21 stream.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="vmf_converter.vmf_converter.VMFConverter.registerFormats">
+<code class="descname">registerFormats</code><em class="property"> = ('vmf',)</em><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.registerFormats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="vmf_converter.vmf_converter.VMFConverter.registerInputExtensions">
+<code class="descname">registerInputExtensions</code><em class="property"> = ('vmf',)</em><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.registerInputExtensions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="vmf_converter.vmf_converter.VMFConverter.registerOutputExtensions">
+<code class="descname">registerOutputExtensions</code><em class="property"> = ('vmf',)</em><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.registerOutputExtensions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="vmf_converter.vmf_converter.VMFConverter.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>obj</em>, <em>fmt</em>, <em>fp=None</em>, <em>subformats=None</em>, <em>**keywords</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vmf_converter/vmf_converter.html#VMFConverter.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vmf_converter.vmf_converter.VMFConverter.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the music21 stream to a VMF file.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="vmf_converter.core.vmf_converter_core.html"
+                        title="previous chapter">vmf_converter.core.vmf_converter_core module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/vmf_converter.vmf_converter.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Patrick Ayoup.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="_sources/vmf_converter.vmf_converter.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

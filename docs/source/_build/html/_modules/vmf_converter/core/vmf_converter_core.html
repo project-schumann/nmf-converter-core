@@ -1,0 +1,627 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>vmf_converter.core.vmf_converter_core &mdash; vmf-converter 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="vmf-converter 0.0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">vmf-converter 0.0.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for vmf_converter.core.vmf_converter_core</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Main logic for parsing a VMF file.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">fractions</span> <span class="kn">import</span> <span class="n">Fraction</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">music21</span> <span class="kn">import</span> <span class="n">note</span><span class="p">,</span> <span class="n">chord</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">meter</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">tempo</span>
+<span class="kn">from</span> <span class="nn">music21.chord</span> <span class="kn">import</span> <span class="n">Chord</span>
+<span class="kn">from</span> <span class="nn">music21.common</span> <span class="kn">import</span> <span class="n">approximateGCD</span>
+<span class="kn">from</span> <span class="nn">music21.key</span> <span class="kn">import</span> <span class="n">KeySignature</span>
+<span class="kn">from</span> <span class="nn">music21.meter</span> <span class="kn">import</span> <span class="n">TimeSignature</span>
+<span class="kn">from</span> <span class="nn">music21.note</span> <span class="kn">import</span> <span class="n">Note</span><span class="p">,</span> <span class="n">Rest</span>
+<span class="kn">from</span> <span class="nn">music21.pitch</span> <span class="kn">import</span> <span class="n">Pitch</span>
+<span class="kn">from</span> <span class="nn">music21.stream</span> <span class="kn">import</span> <span class="n">Score</span><span class="p">,</span> <span class="n">Part</span><span class="p">,</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">Voice</span>
+
+<span class="kn">from</span> <span class="nn">vmf_converter.core.articulation_converter</span> <span class="kn">import</span> <span class="n">ArticulationConverter</span>
+<span class="kn">from</span> <span class="nn">vmf_converter.core.dynamic_converter</span> <span class="kn">import</span> <span class="n">DynamicConverter</span>
+
+<span class="c"># The first note bit is at position 3.</span>
+<span class="n">INDEX_OF_FIRST_NOTE_BIT</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="c"># Part id is the last bit.</span>
+<span class="n">INDEX_OF_PART_ID_BIT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="c"># Precision for rounding roubles.</span>
+<span class="n">PRECISION</span> <span class="o">=</span> <span class="mf">0.000000000000001</span>
+<span class="n">BASIC_TICK_LENGTH</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">FIRST_PITCH_INDEX</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">DYNAMIC_BIT</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">ARTICULATION_BIT</span> <span class="o">=</span> <span class="mi">2</span>
+
+<div class="viewcode-block" id="find_number_of_notes_in_tick"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.find_number_of_notes_in_tick">[docs]</a><span class="k">def</span> <span class="nf">find_number_of_notes_in_tick</span><span class="p">(</span><span class="n">tick</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Finds the number of notes in a tick.</span>
+
+<span class="sd">    :param tick: The tick to evaluate.</span>
+<span class="sd">    :return: An integer representing the number of notes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Return all the bits describing pitches, and divide by 2 (each note uses 2 bits).</span>
+    <span class="c"># Remove all bit pairs with -1 from the count.</span>
+    <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tick</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">tick</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="read_vmf_string"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.read_vmf_string">[docs]</a><span class="k">def</span> <span class="nf">read_vmf_string</span><span class="p">(</span><span class="n">vmf_string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads VMF data from a string to a Score Stream.</span>
+
+<span class="sd">    :param vmf_string: The contents of the VMF file as a string.</span>
+<span class="sd">    :return: A music21 score instance containing the music in the VMF file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">parts_converted</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">vmf</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">vmf_string</span><span class="p">)</span>
+
+    <span class="c"># create a score</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="n">Score</span><span class="p">()</span>
+
+    <span class="c"># Get the initial data</span>
+    <span class="n">number_of_parts</span> <span class="o">=</span> <span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;number_of_parts&#39;</span><span class="p">]</span>
+    <span class="n">number_of_voices</span> <span class="o">=</span> <span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;number_of_voices&#39;</span><span class="p">]</span>
+    <span class="n">smallest_note</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;tick_value&#39;</span><span class="p">]))</span>
+
+    <span class="c"># create the parts and first measure.</span>
+    <span class="k">for</span> <span class="n">voice_number</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_parts</span><span class="p">):</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="n">Part</span><span class="p">()</span>
+        <span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">()</span>
+
+        <span class="n">part</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">voice</span><span class="p">)</span>
+
+        <span class="n">score</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+
+    <span class="c"># get the body of the vmf</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">vmf</span><span class="p">[</span><span class="s">&#39;body&#39;</span><span class="p">]</span>
+
+    <span class="n">part_number</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c"># We do this because we want to do each part at a time.</span>
+    <span class="k">for</span> <span class="n">voice_number</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_voices</span><span class="p">):</span>
+        <span class="c"># Get all ticks for a given part.</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="p">[</span><span class="n">tick</span><span class="p">[</span><span class="n">voice_number</span><span class="p">]</span> <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="n">body</span><span class="p">]</span>
+
+        <span class="n">current_element</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">current_voice</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># iterate over each tick</span>
+        <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="n">part</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">current_voice</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># Get the parent part if it exists.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">current_part</span> <span class="o">=</span> <span class="n">parts_converted</span><span class="p">[</span><span class="n">tick</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span>
+
+                    <span class="c"># add a new voice and write to it.</span>
+                    <span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">()</span>
+
+                    <span class="n">initial_key_signature</span> <span class="o">=</span> <span class="n">KeySignature</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;key_signature&#39;</span><span class="p">][</span><span class="s">&#39;0.0&#39;</span><span class="p">])</span>
+                    <span class="n">initial_time_signature</span> <span class="o">=</span> <span class="n">TimeSignature</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;time_signature&#39;</span><span class="p">][</span><span class="s">&#39;0.0&#39;</span><span class="p">])</span>
+
+                    <span class="n">voice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">initial_key_signature</span><span class="p">)</span>
+                    <span class="n">voice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">initial_time_signature</span><span class="p">)</span>
+
+                    <span class="n">current_part</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">voice</span><span class="p">)</span>
+
+                <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                    <span class="c"># Add it to our dictionary otherwise.</span>
+                    <span class="n">current_part</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">part_number</span><span class="p">]</span>
+                    <span class="n">part_number</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                    <span class="n">parts_converted</span><span class="p">[</span><span class="n">tick</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">current_part</span>
+
+                <span class="c"># Get the last voice.</span>
+                <span class="n">current_voice</span> <span class="o">=</span> <span class="n">current_part</span><span class="o">.</span><span class="n">voices</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">tick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">current_element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># check for precision and adjust</span>
+                    <span class="n">rounded</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">-</span> <span class="n">rounded</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">PRECISION</span><span class="p">:</span>
+                        <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">=</span> <span class="n">rounded</span>
+
+                    <span class="c"># append to the part</span>
+                    <span class="n">current_voice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_element</span><span class="p">)</span>
+
+                <span class="c"># Find how many notes to write. This will always be an int.</span>
+                <span class="n">number_of_notes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">find_number_of_notes_in_tick</span><span class="p">(</span><span class="n">tick</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="n">number_of_notes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="c"># create a new note</span>
+                    <span class="n">current_element</span> <span class="o">=</span> <span class="n">Note</span><span class="p">(</span><span class="n">Pitch</span><span class="p">(</span><span class="n">pitchClass</span><span class="o">=</span><span class="n">tick</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">octave</span><span class="o">=</span><span class="n">tick</span><span class="p">[</span><span class="mi">4</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pitches</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="c"># create the pitches.</span>
+                    <span class="c"># From the beginning to the end of the pitch section of the tick.</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">FIRST_PITCH_INDEX</span><span class="p">,</span> <span class="n">FIRST_PITCH_INDEX</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">number_of_notes</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                        <span class="n">pitch</span> <span class="o">=</span> <span class="n">Pitch</span><span class="p">(</span><span class="n">pitchClass</span><span class="o">=</span><span class="n">tick</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">octave</span><span class="o">=</span><span class="n">tick</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                        <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="p">)</span>
+
+                    <span class="c"># create a new chord with these pitches.</span>
+                    <span class="n">current_element</span> <span class="o">=</span> <span class="n">Chord</span><span class="p">(</span><span class="n">pitches</span><span class="p">)</span>
+
+
+                <span class="c"># set the velocity of the note.</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">velocity</span> <span class="o">=</span> <span class="n">DynamicConverter</span><span class="o">.</span><span class="n">vmf_to_velocity</span><span class="p">(</span><span class="n">tick</span><span class="p">[</span><span class="n">DYNAMIC_BIT</span><span class="p">])</span>
+                <span class="c"># set the articulation</span>
+                <span class="k">if</span> <span class="n">tick</span><span class="p">[</span><span class="n">ARTICULATION_BIT</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">current_element</span><span class="o">.</span><span class="n">articulations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">ArticulationConverter</span><span class="o">.</span><span class="n">vmf_to_articulation</span><span class="p">(</span><span class="n">tick</span><span class="p">[</span><span class="n">ARTICULATION_BIT</span><span class="p">]))</span>
+
+                <span class="c"># set the value for this tick.</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">=</span> <span class="n">smallest_note</span>
+            <span class="k">elif</span> <span class="n">tick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c"># extend previous note</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">+=</span> <span class="n">smallest_note</span>
+
+            <span class="k">elif</span> <span class="n">tick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">current_element</span><span class="p">,</span> <span class="n">note</span><span class="o">.</span><span class="n">Note</span><span class="p">)</span> <span class="ow">or</span> <span class="n">current_element</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">current_element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="c"># check for precision and adjust</span>
+                    <span class="n">rounded</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">-</span> <span class="n">rounded</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">PRECISION</span><span class="p">:</span>
+                        <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">=</span> <span class="n">rounded</span>
+
+                    <span class="c"># append to the part</span>
+                    <span class="n">current_voice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_element</span><span class="p">)</span>
+
+                <span class="c"># create new rest</span>
+                <span class="n">current_element</span> <span class="o">=</span> <span class="n">Rest</span><span class="p">()</span>
+
+                <span class="c"># Set the value for this tick.</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">=</span> <span class="n">smallest_note</span>
+
+            <span class="k">elif</span> <span class="n">tick</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current_element</span><span class="p">,</span> <span class="n">note</span><span class="o">.</span><span class="n">Rest</span><span class="p">):</span>
+                <span class="c"># extend previous rest.</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">+=</span> <span class="n">smallest_note</span>
+
+        <span class="c"># Append the last element in progress.</span>
+        <span class="k">if</span> <span class="n">current_element</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># check for precision and adjust</span>
+            <span class="n">rounded</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">-</span> <span class="n">rounded</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">PRECISION</span><span class="p">:</span>
+                <span class="n">current_element</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">=</span> <span class="n">rounded</span>
+
+            <span class="c"># append to the part</span>
+            <span class="n">current_voice</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_element</span><span class="p">)</span>
+
+    <span class="c"># create the stream for time signature changes</span>
+    <span class="n">time_signature_stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">time_signature_str</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;time_signature&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="n">time_signature</span> <span class="o">=</span> <span class="n">TimeSignature</span><span class="p">(</span><span class="n">time_signature_str</span><span class="p">)</span>
+        <span class="n">time_signature_stream</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_signature</span><span class="p">)</span>
+        <span class="n">time_signature_stream</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="c"># finish up the file.</span>
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">voice</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">voices</span><span class="p">:</span>
+            <span class="n">voice</span><span class="o">.</span><span class="n">makeMeasures</span><span class="p">(</span><span class="n">inPlace</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">meterStream</span><span class="o">=</span><span class="n">time_signature_stream</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;tempo&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">mm</span> <span class="o">=</span> <span class="n">tempo</span><span class="o">.</span><span class="n">MetronomeMark</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">referent</span><span class="o">=</span><span class="n">note</span><span class="o">.</span><span class="n">Note</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s">&#39;quarter&#39;</span><span class="p">))</span>
+            <span class="n">voice</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">mm</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">ks</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">vmf</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;key_signature&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">voice</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">KeySignature</span><span class="p">(</span><span class="n">ks</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">score</span>
+</div>
+<div class="viewcode-block" id="read_vmf_file"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.read_vmf_file">[docs]</a><span class="k">def</span> <span class="nf">read_vmf_file</span><span class="p">(</span><span class="n">vmf_score</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reads VMF to Score Stream.</span>
+
+<span class="sd">    :param vmf_score: The path of the VMF file to read.</span>
+<span class="sd">    :return: A music21 score instance containing the music in the VMF file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">vmf_score</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">file</span><span class="p">:</span>
+        <span class="n">file_contents</span> <span class="o">=</span> <span class="nb">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">read_vmf_string</span><span class="p">(</span><span class="n">file_contents</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="scan_score_durations"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.scan_score_durations">[docs]</a><span class="k">def</span> <span class="nf">scan_score_durations</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scans the entire score for rhythmic analysis.</span>
+<span class="sd">    This scan determines the smallest note value necessary to accurately</span>
+<span class="sd">    encode the score in vmf.</span>
+
+<span class="sd">    :param score: The input score stream to analyze.</span>
+<span class="sd">    :return: An integer denoting the smallest fraction of a quarter note</span>
+<span class="sd">    necessary to accurately encode the score in vmf.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Flatten the score into one stream and extract the notes and rests.</span>
+    <span class="n">notes_and_rests</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">notesAndRests</span>
+
+    <span class="c"># Set comprehension: Get a set of durations in the measure.</span>
+    <span class="n">durations</span> <span class="o">=</span> <span class="p">{</span><span class="n">element</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">quarterLength</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">notes_and_rests</span><span class="p">}</span>
+
+    <span class="c"># We need a list, not a set. Convert here. The GCD is the largest common subdivision we can use.</span>
+    <span class="k">return</span> <span class="n">approximateGCD</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">durations</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="scan_score_for_largest_chord"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.scan_score_for_largest_chord">[docs]</a><span class="k">def</span> <span class="nf">scan_score_for_largest_chord</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scans the entire score for the largest chord.</span>
+<span class="sd">    This determines how many notes entries should be available in a tick.</span>
+
+<span class="sd">    :param score: The music21 score to scan.</span>
+<span class="sd">    :return: An integer denoting the size of the largest chord.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Flatten the score into one stream and extract the chords.</span>
+    <span class="n">chords</span> <span class="o">=</span> <span class="p">[</span><span class="n">element</span> <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">elements</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">chord</span><span class="o">.</span><span class="n">Chord</span><span class="p">)]</span>
+
+    <span class="n">largest_size</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c"># Find the largest chord size.</span>
+    <span class="k">for</span> <span class="n">current_chord</span> <span class="ow">in</span> <span class="n">chords</span><span class="p">:</span>
+        <span class="n">largest_size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">current_chord</span><span class="o">.</span><span class="n">multisetCardinality</span><span class="p">,</span> <span class="n">largest_size</span><span class="p">)</span>
+
+    <span class="c"># If there are no chords, largest size comes out as 0.</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">largest_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="convert_voices_to_parts"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.convert_voices_to_parts">[docs]</a><span class="k">def</span> <span class="nf">convert_voices_to_parts</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">id_map</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Removes polyphonic voices and replaces them with part representations of its voices.</span>
+
+<span class="sd">    :param score: The music21 score to scan.</span>
+<span class="sd">    :param id_map: A mapping of music21 ids to vmf part ids.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parts_to_insert</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">next_part_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">)):</span>
+        <span class="n">part</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="c"># OLD: list(filter(lambda m: issubclass(type(m), Stream) and m.hasVoices(), part.elements))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">([</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">elements</span> <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">m</span><span class="p">),</span> <span class="n">Stream</span><span class="p">)</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">hasVoices</span><span class="p">()])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># break the voices into parts.</span>
+            <span class="n">exploded_stream</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">explode</span><span class="p">()</span>
+
+            <span class="c"># assign the part id to all exploded parts.</span>
+            <span class="c"># and add the exploded parts to the original stream. Mark where to insert the parts.</span>
+            <span class="k">for</span> <span class="n">current_stream</span> <span class="ow">in</span> <span class="n">exploded_stream</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+                <span class="c"># all related parts share the same id.</span>
+                <span class="n">id_map</span><span class="p">[</span><span class="n">current_stream</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_part_id</span>
+                <span class="n">parts_to_insert</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">exploded_stream</span><span class="o">.</span><span class="n">parts</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># some sequencers don&#39;t add a part id..</span>
+            <span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">part</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">next_part_id</span>
+
+            <span class="c"># Just record the id.</span>
+            <span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_part_id</span>
+
+        <span class="n">next_part_id</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">new_parts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+
+    <span class="c"># Iterate over the parts_to_insert in reverse, otherwise</span>
+    <span class="c"># recorded indices are obsolete.</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">parts_to_insert</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="c"># Reverse insertion order so that ordering is properly preserved.</span>
+        <span class="k">for</span> <span class="n">current_part</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">parts_to_insert</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">elements</span><span class="p">):</span>
+            <span class="n">new_parts</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">current_part</span><span class="p">)</span>
+
+        <span class="c"># Remove the exploded part.</span>
+        <span class="n">new_parts</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c"># Store the new parts back as a tuple.</span>
+    <span class="n">score</span><span class="o">.</span><span class="n">elements</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_parts</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="scan_score_for_number_of_voices"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.scan_score_for_number_of_voices">[docs]</a><span class="k">def</span> <span class="nf">scan_score_for_number_of_voices</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Scans the entire score to determine how many voices there are.</span>
+
+<span class="sd">    :param score: The music21 score to scan.</span>
+<span class="sd">    :return: The number of parts in the score.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">number_of_parts</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+        <span class="n">voices_in_part</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">current_measure</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="n">stream</span><span class="o">.</span><span class="n">Measure</span><span class="p">):</span>
+            <span class="n">voices_in_measure</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_measure</span><span class="o">.</span><span class="n">voices</span><span class="p">)</span>
+
+            <span class="c"># If there is only 1 voice, then we have 0 voice objects.</span>
+            <span class="k">if</span> <span class="n">voices_in_measure</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">voices_in_measure</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">voices_in_part</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">voices_in_part</span><span class="p">,</span> <span class="n">voices_in_measure</span><span class="p">)</span>
+        <span class="n">number_of_parts</span> <span class="o">+=</span> <span class="n">voices_in_part</span>
+
+    <span class="k">return</span> <span class="n">number_of_parts</span>
+</div>
+<div class="viewcode-block" id="convert_score_to_vmf"><a class="viewcode-back" href="../../../vmf_converter.core.vmf_converter_core.html#vmf_converter.core.vmf_converter_core.convert_score_to_vmf">[docs]</a><span class="k">def</span> <span class="nf">convert_score_to_vmf</span><span class="p">(</span><span class="n">score</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a MIDI file to an vmf file.</span>
+
+<span class="sd">    :param score: The music21 score to convert to VMF.</span>
+<span class="sd">    :return: A dictionary containing the VMF data structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Mapping of music21 id to vmf ids</span>
+    <span class="n">id_map</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># The smallest duration covered. Expressed as a percentage of a quarter note.</span>
+    <span class="n">smallest_note</span> <span class="o">=</span> <span class="n">scan_score_durations</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+
+    <span class="c"># The number of notes in largest chord in the file.</span>
+    <span class="n">largest_chord</span> <span class="o">=</span> <span class="n">scan_score_for_largest_chord</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+
+    <span class="c"># Find number of parts for header.</span>
+    <span class="n">number_of_parts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+
+    <span class="n">convert_voices_to_parts</span><span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">id_map</span><span class="p">)</span>
+
+    <span class="n">tie_active</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>
+        <span class="n">pitches</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">measures</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="s">&#39;Measure&#39;</span><span class="p">)</span>
+
+        <span class="c"># Some sequencers don&#39;t create measures.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">measures</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">part</span><span class="o">.</span><span class="n">makeMeasures</span><span class="p">(</span><span class="n">inPlace</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">measures</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="s">&#39;Measure&#39;</span><span class="p">)</span>
+
+        <span class="c"># Check for a pickup measure.</span>
+        <span class="n">first_measure</span> <span class="o">=</span> <span class="n">measures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">first_measure</span><span class="o">.</span><span class="n">number</span> <span class="ow">is</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">first_measure</span><span class="o">.</span><span class="n">paddingLeft</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">n_frames</span> <span class="o">=</span> <span class="n">first_measure</span><span class="o">.</span><span class="n">paddingLeft</span> <span class="o">/</span> <span class="n">smallest_note</span>
+            <span class="c"># Pad out the anacrusis.</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_frames</span><span class="p">)):</span>
+                <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+                <span class="c"># Pad remaining note positions:</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span><span class="p">):</span>
+                    <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+                <span class="c"># Finally add the part id.</span>
+                <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">part</span><span class="o">.</span><span class="n">flat</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">note</span><span class="o">.</span><span class="n">Note</span><span class="p">):</span>
+
+                <span class="n">n_frames</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">/</span> <span class="n">smallest_note</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_frames</span><span class="p">)):</span>
+
+                    <span class="n">dynamic</span> <span class="o">=</span> <span class="n">DynamicConverter</span><span class="o">.</span><span class="n">velocity_to_vmf</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">velocity</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">tie_active</span><span class="p">:</span>
+                            <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">octave</span><span class="p">])</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">octave</span><span class="p">])</span>
+
+                        <span class="c"># Pad remaining note positions for chords smaller than largest.</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                        <span class="c"># Finally, add the part id.</span>
+                        <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+                        <span class="c"># a tie can only begin or end at a new note.</span>
+                        <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">tie</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">element</span><span class="o">.</span><span class="n">tie</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;start&#39;</span><span class="p">:</span>
+                            <span class="n">tie_active</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">tie_active</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">,</span> <span class="n">element</span><span class="o">.</span><span class="n">octave</span><span class="p">])</span>
+
+                        <span class="c"># Pad remaining note positions for chords smaller than largest.</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                        <span class="c"># Add the part id</span>
+                        <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">chord</span><span class="o">.</span><span class="n">Chord</span><span class="p">):</span>
+                <span class="n">n_frames</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">/</span> <span class="n">smallest_note</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_frames</span><span class="p">)):</span>
+
+                    <span class="n">dynamic</span> <span class="o">=</span> <span class="n">DynamicConverter</span><span class="o">.</span><span class="n">velocity_to_vmf</span><span class="p">(</span><span class="n">element</span><span class="o">.</span><span class="n">volume</span><span class="o">.</span><span class="n">velocity</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">tie_active</span><span class="p">:</span>
+                            <span class="n">current_chord</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+                            <span class="c"># add in each pitch.</span>
+                            <span class="k">for</span> <span class="n">pitch</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">pitches</span><span class="p">:</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">)</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">octave</span><span class="p">)</span>
+
+                            <span class="c"># Pad remaining note positions for chords smaller than largest.</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="n">element</span><span class="o">.</span><span class="n">multisetCardinality</span><span class="p">):</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                            <span class="c"># Add the part id.</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+                            <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_chord</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">current_chord</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+                            <span class="c"># add in each pitch.</span>
+                            <span class="k">for</span> <span class="n">pitch</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">pitches</span><span class="p">:</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">)</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">octave</span><span class="p">)</span>
+
+                            <span class="c"># Pad remaining note positions for chords smaller than largest.</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="n">element</span><span class="o">.</span><span class="n">multisetCardinality</span><span class="p">):</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                                <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                            <span class="c"># Add the part id.</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+                            <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_chord</span><span class="p">)</span>
+
+                        <span class="c"># a tie can only begin or end at a new chord.</span>
+                        <span class="k">if</span> <span class="n">element</span><span class="o">.</span><span class="n">tie</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">element</span><span class="o">.</span><span class="n">tie</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;start&#39;</span><span class="p">:</span>
+                            <span class="n">tie_active</span> <span class="o">=</span> <span class="bp">True</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">tie_active</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">current_chord</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="n">dynamic</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+                        <span class="c"># add in each pitch.</span>
+                        <span class="k">for</span> <span class="n">pitch</span> <span class="ow">in</span> <span class="n">element</span><span class="o">.</span><span class="n">pitches</span><span class="p">:</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">pitchClass</span><span class="p">)</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitch</span><span class="o">.</span><span class="n">octave</span><span class="p">)</span>
+
+                        <span class="c"># Pad remaining note positions for chords smaller than largest.</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="n">element</span><span class="o">.</span><span class="n">multisetCardinality</span><span class="p">):</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+                        <span class="c"># add the part id.</span>
+                        <span class="n">current_chord</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+                        <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_chord</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="n">note</span><span class="o">.</span><span class="n">Rest</span><span class="p">):</span>
+                <span class="n">n_frames</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">quarterLength</span> <span class="o">/</span> <span class="n">smallest_note</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n_frames</span><span class="p">)):</span>
+                    <span class="n">pitches</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+                    <span class="c"># Pad remaining note positions:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">largest_chord</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+                    <span class="c"># Finally add the part id.</span>
+                    <span class="n">pitches</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">id_map</span><span class="p">[</span><span class="n">part</span><span class="o">.</span><span class="n">id</span><span class="p">])</span>
+
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pitches</span><span class="p">)</span>
+
+    <span class="n">vmf_file</span> <span class="o">=</span> <span class="p">{</span><span class="s">u&#39;header&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">u&#39;body&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">tick</span><span class="p">)</span> <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">parts</span><span class="p">)]}</span>
+
+    <span class="c"># Prepare the header.</span>
+    <span class="c"># Get a string of the fraction representation.</span>
+    <span class="c"># Limiting the denominator to get clean values (ie 1/3). The</span>
+    <span class="c"># limit of 64 ends up being a 256th note which is never really used.</span>
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;tick_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Fraction</span><span class="p">(</span><span class="n">smallest_note</span><span class="p">)</span><span class="o">.</span><span class="n">limit_denominator</span><span class="p">(</span><span class="mi">64</span><span class="p">))</span>
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;number_of_voices&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scan_score_for_number_of_voices</span><span class="p">(</span><span class="n">score</span><span class="p">)</span>
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;number_of_parts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">number_of_parts</span>
+
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;time_signature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># Get the time signatures.</span>
+    <span class="k">for</span> <span class="n">time_signature</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">TimeSignature</span><span class="p">):</span>
+        <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;time_signature&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">time_signature</span><span class="o">.</span><span class="n">offset</span><span class="p">)]</span> <span class="o">=</span> <span class="n">time_signature</span><span class="o">.</span><span class="n">ratioString</span>
+
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;key_signature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># Get the key signatures</span>
+    <span class="k">for</span> <span class="n">key_signature</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">KeySignature</span><span class="p">):</span>
+        <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;key_signature&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">key_signature</span><span class="o">.</span><span class="n">offset</span><span class="p">)]</span> <span class="o">=</span> <span class="n">key_signature</span><span class="o">.</span><span class="n">sharps</span>
+
+    <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;tempo&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">getElementsByClass</span><span class="p">(</span><span class="n">tempo</span><span class="o">.</span><span class="n">MetronomeMark</span><span class="p">):</span>
+        <span class="n">vmf_file</span><span class="p">[</span><span class="s">&#39;header&#39;</span><span class="p">][</span><span class="s">&#39;tempo&#39;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">offset</span><span class="p">)]</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">getQuarterBPM</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">vmf_file</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Patrick Ayoup.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

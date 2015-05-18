@@ -39,8 +39,8 @@ class DynamicConverter:
     def velocity_to_vmf(cls, velocity):
         """
         Converts a midi velocity to a VMF dynamic symbol.
+
         :param velocity: The midi velocity.
-        :rtype int: The corresponding value for VMF.
         :return: A value representing a dynamic in VMF.
         """
         if velocity is None:
@@ -73,8 +73,8 @@ class DynamicConverter:
     def vmf_to_velocity(cls, vmf_value):
         """
         Converts a VMF dynamic value to a velocity.
+
         :param vmf_value: The dynamic value in VMF format.
-        :rtype: int
         :return: The corresponding MIDI velocity value.
         """
         if vmf_value == -5:

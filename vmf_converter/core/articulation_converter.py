@@ -10,6 +10,7 @@ class ArticulationConverter:
     def articulation_to_vmf(cls, articulation):
         """
         Converts and articulation to a vmf articulation
+
         :param articulation: The music21 articulation
         :return: The vmf encoding
         """
@@ -31,6 +32,7 @@ class ArticulationConverter:
     def vmf_to_articulation(cls, vmf):
         """
         Converts a vmf encoding to an articulation
+
         :param vmf: The vmf value
         :return: An articulation object.
         """
