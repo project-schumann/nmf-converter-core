@@ -651,6 +651,79 @@ class vmfConverterTest(unittest.TestCase):
             assert expected.number == actual.number
             assert expected.offset == actual.offset
 
+    def test_read_vmf_string_001(self):
+        """
+        Tests reading a VMF file with articulations
+        """
+        actual_score = vmf_converter_core.read_vmf_file('./expected/articulation.vmf')
+        expected_score = converter.parse('./fixtures/articulation.xml')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements,
+                                                        actual.flat.notesAndRests.elements):
+                if type(expected_element) is Chord:
+                    assert len(expected_element.pitches) == len(actual_element.pitches)
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.volume.velocity == actual_element.volume.velocity
+                    for actual_pitch, expected_pitch in zip(expected_element.pitches, actual_element.pitches):
+                        assert expected_pitch.pitchClass == actual_pitch.pitchClass
+                        assert expected_pitch.octave == actual_pitch.octave
+                elif type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                    # Equality on articulations is not well implemented in music21.
+                    for a, b in zip(expected_element.articulations, actual_element.articulations):
+                        assert type(a) == type(b)
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
+    def test_read_vmf_string_002(self):
+        """
+        Tests reading a VMF file with a pickup measure.
+        """
+        actual_score = vmf_converter_core.read_vmf_file('./expected/anacrusis.vmf')
+        expected_score = converter.parse('./fixtures/anacrusis.xml')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements,
+                                                        actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
+    def test_read_vmf_string_003(self):
+        """
+        Tests reading a VMF file with a pickup and a measure of rests.
+        """
+        actual_score = vmf_converter_core.read_vmf_file('./expected/anacrusisAndRests.vmf')
+        expected_score = converter.parse('./fixtures/anacrusisAndRests.xml')
+
+        # Assert that the file has the right number of parts.
+        assert len(expected_score.parts) == len(actual_score.parts)
+
+        # Assert that the notes and rests match
+        for expected, actual in zip(expected_score.parts, actual_score.parts):
+            for expected_element, actual_element in zip(expected.flat.notesAndRests.elements,
+                                                        actual.flat.notesAndRests.elements):
+                if type(expected_element) is Note:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+                    assert expected_element.pitch.pitchClass == actual_element.pitch.pitchClass
+                    assert expected_element.pitch.octave == actual_element.pitch.octave
+                elif type(expected_element) is Rest:
+                    assert expected_element.quarterLength == actual_element.quarterLength
+
     def test_find_number_of_notes_in_tick_001(self):
         """
         Tests finding the number of notes in a tick
