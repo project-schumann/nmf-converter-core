@@ -16,6 +16,7 @@ from vmf_converter.core.dynamic_converter import DynamicConverter
 
 
 
+
 # The first note bit is at position 3.
 INDEX_OF_FIRST_NOTE_BIT = 3
 # Part id is the last bit.
@@ -351,6 +352,31 @@ def convert_score_to_vmf(score):
 
     for part in score.parts:
         pitches = []
+
+        measures = part.getElementsByClass('Measure')
+
+        # Some sequencers don't create measures.
+        if len(measures) is 0:
+            part.makeMeasures(inPlace=True)
+            measures = part.getElementsByClass('Measure')
+
+        # Check for a pickup measure.
+        first_measure = measures[0]
+
+        if first_measure.number is 0 or first_measure.paddingLeft > 0:
+            n_frames = first_measure.paddingLeft / smallest_note
+            # Pad out the anacrusis.
+            for i in range(int(n_frames)):
+                pitches.append([0, 0, 0])
+
+                # Pad remaining note positions:
+                for i in range(largest_chord - 1):
+                    pitches[-1].append(0)
+                    pitches[-1].append(0)
+
+                # Finally add the part id.
+                pitches[-1].append(id_map[part.id])
+
         for element in part.flat:
             if isinstance(element, note.Note):
 

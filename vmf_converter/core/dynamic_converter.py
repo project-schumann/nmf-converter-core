@@ -43,6 +43,9 @@ class DynamicConverter:
         :rtype int: The corresponding value for VMF.
         :return: A value representing a dynamic in VMF.
         """
+        if velocity is None:
+            return 1
+
         if DynamicConverter.__PPPP_MIN <= velocity <= DynamicConverter.__PPPP_MAX:
             return -5
         elif DynamicConverter.__PPP_MIN <= velocity <= DynamicConverter.__PPP_MAX:

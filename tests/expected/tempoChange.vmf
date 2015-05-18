@@ -2,7 +2,7 @@
   "header": {
     "tick_value": "2",
     "number_of_parts": 1,
-    "number_of_voices": 0,
+    "number_of_voices": 1,
     "time_signature": {
       "0.0": "2/4"
     },
