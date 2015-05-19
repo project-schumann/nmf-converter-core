@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
   name='vmf-converter',
-  packages=['vmf_converter'],
+  packages=['vmf_converter', 'vmf_converter.core'],
   version='0.0.1',
   description='VMF Converter for Music21',
   long_description = open('README.rst', 'r').read(),
