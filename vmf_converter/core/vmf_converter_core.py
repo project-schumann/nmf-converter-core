@@ -14,6 +14,7 @@ from music21.stream import Score, Part, Stream, Voice
 from vmf_converter.core.articulation_converter import ArticulationConverter
 from vmf_converter.core.dynamic_converter import DynamicConverter
 
+
 # The first note bit is at position 3.
 INDEX_OF_FIRST_NOTE_BIT = 3
 # Part id is the last bit.
@@ -375,7 +376,7 @@ def convert_score_to_vmf(score):
             n_frames = first_measure.paddingLeft / smallest_note
             # Pad out the anacrusis.
             for i in range(int(n_frames)):
-                pitches.append([0, 0, 0])
+                pitches.append([0, 1, 0])
 
                 # Pad remaining note positions:
                 for i in range(largest_chord):
